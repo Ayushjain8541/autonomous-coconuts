@@ -108,6 +108,22 @@ class ReportTests(unittest.TestCase):
         self.assertNotIn('both below',item['assessment']['text'])
         self.assertTrue(any('direction' in w for w in report['warnings']))
 
+    def test_numeric_event_id_cannot_hide_a_fabricated_count(self):
+        self.analysis['encounters'][0]['event_id']='987654'
+        def change(result):
+            result['executive_summary']={'text':'There are 987654 critical encounters.', 'fact_ids':['portfolio.critical']}
+        self.assertEqual(self.service(ReportClient(change)).generate(self.analysis)['status'],'unavailable')
+        def legitimate(result):
+            result['executive_summary']={'text':'Encounter 987654 is critical.', 'fact_ids':['event.0.severity']}
+        self.assertEqual(self.service(ReportClient(legitimate)).generate(self.analysis)['status'],'ready')
+
+    def test_plural_and_british_execution_instructions_are_rejected(self):
+        for instruction in ['Fire the thrusters now.','Perform a manoeuvre immediately.','Perform a\nmanoeuvre immediately.']:
+            def change(result):
+                result['encounters'][0]['actions'][0]['rationale']['text']=instruction
+            with self.subTest(instruction=instruction):
+                self.assertEqual(self.service(ReportClient(change)).generate(self.analysis)['status'],'unavailable')
+
     def test_bad_references_numbers_cross_event_actions_and_burn_instructions_rejected(self):
         changes = [
             lambda r:r['executive_summary'].update(fact_ids=['invented.fact']),

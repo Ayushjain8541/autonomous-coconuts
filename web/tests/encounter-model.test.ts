@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { parseAnalysis } from '../client/contract.ts';
-import { schematicSample, sliderSample, advancePlayback, dashboardRows, maneuverReview, eventRoute, reportAgeHours, discreteHorizon, horizonStops, animatedMetric, easeOutCubic, playbackStep, pointerEncounterTime, encounterMotion, encounterSnapshot, snapshotSample, relativeMotionSample } from '../client/encounter-model.ts';
+import { schematicSample, sliderSample, advancePlayback, dashboardRows, maneuverReview, eventRoute, reportAgeHours, discreteHorizon, horizonStops, animatedMetric, easeOutCubic, playbackStep, pointerEncounterTime, encounterMotion, illustrativeImportedMotion, sourcePhaseLabel, encounterSnapshot, snapshotSample, relativeMotionSample } from '../client/encounter-model.ts';
 const analysis = parseAnalysis(JSON.parse(readFileSync(new URL('../../contracts/fixtures/analysis-demo.json',import.meta.url),'utf8')));
 
 test('schematic TCA center separation matches actual miss distance under the one shared scale',()=>{
@@ -148,4 +148,35 @@ test('zero and near-coincident snapshot coordinates are never offset for visibil
   const snapshot=encounterSnapshot(row)!;const sample=snapshotSample(snapshot);
   assert.equal(snapshot.separationM,r);assert.equal(sample.debris[0]*sample.metresPerUnit,r);assert.deepEqual(sample.debris.slice(1),[0,0]);assert.ok(sample.debris.every(Number.isFinite));
  }
+});
+
+
+const importedAnalysis={...analysis,source:{...analysis.source,mode:'uploaded_csv' as const},time_basis:'per_event_latest_report' as const,scenario_clock_utc:null};
+test('imported linear illustration uses supplied nonperpendicular vectors and a source-centered seconds interval',()=>{
+ const row={...analysis.encounters[0],miss_distance_m:12,geometry:{frame:'RTN' as const,position_m:{r:300,t:-400,n:1200},velocity_mps:{r:20,t:30,n:-10}}};
+ const model=illustrativeImportedMotion(importedAnalysis,row)!;assert.ok(model);assert.ok(model.halfWindowSeconds<=5);
+ assert.equal(encounterMotion(importedAnalysis,row,analysis),null);
+ for(const time of [0,.25,.5,.75,1]){
+  const sample=relativeMotionSample(model,time);const expected=[300+20*sample.seconds,-400+30*sample.seconds,1200-10*sample.seconds];
+  sample.debris.forEach((value,i)=>assert.ok(Math.abs(value*sample.metresPerUnit-expected[i])<1e-10));
+  assert.equal(sample.separationM,Math.hypot(...expected));
+ }
+ assert.equal(relativeMotionSample(model,.5).seconds,0);assert.equal(relativeMotionSample(model,.5).separationM,1300);
+ assert.equal(row.miss_distance_m,12);assert.equal(sourcePhaseLabel(0),'Before source state');assert.equal(sourcePhaseLabel(.5),'Source state');assert.equal(sourcePhaseLabel(1),'After source state');
+});
+test('imported illustrative playback never uses scalar speed to invent missing or zero velocity',()=>{
+ const base=analysis.encounters[0];
+ for(const geometry of [null,{frame:'RTN',position_m:{r:800,t:0,n:0},velocity_mps:null},{frame:'RTN',position_m:{r:800,t:0,n:0},velocity_mps:{r:0,t:0,n:0}},{frame:'RTN',position_m:{r:800,t:0,n:0},velocity_mps:{r:NaN,t:1,n:0}},{frame:'RTN',position_m:{r:800,t:0,n:0},velocity_mps:{r:1,t:2}}]){
+  assert.equal(illustrativeImportedMotion(importedAnalysis,{...base,relative_speed_mps:7500,geometry} as typeof base),null);
+ }
+ assert.equal(illustrativeImportedMotion(analysis,base),null);assert.ok(encounterMotion(analysis,base,analysis));
+});
+test('linear interval remains bounded and finite with close source points and extreme vector magnitudes',()=>{
+ for(const [position,velocity] of [[{r:0,t:0,n:0},{r:7500,t:0,n:0}],[{r:.001,t:0,n:0},{r:-20,t:30,n:0}],[{r:800,t:0,n:0},{r:1e308,t:0,n:0}],[{r:800,t:0,n:0},{r:1e-300,t:0,n:0}]]){
+  const row={...analysis.encounters[0],geometry:{frame:'RTN' as const,position_m:position,velocity_mps:velocity}};
+  const model=illustrativeImportedMotion(importedAnalysis,row)!;assert.ok(model);assert.ok(model.halfWindowSeconds>0&&model.halfWindowSeconds<=5);
+  for(const time of [0,.5,1]){const sample=relativeMotionSample(model,time);assert.ok(Number.isFinite(sample.seconds));assert.ok(Number.isFinite(sample.separationM));assert.ok(sample.debris.every(Number.isFinite));assert.ok(Math.hypot(...sample.debris)<=17);}
+ }
+ const overflowing={...analysis.encounters[0],geometry:{frame:'RTN' as const,position_m:{r:1.79e308,t:0,n:0},velocity_mps:{r:1e308,t:0,n:0}}};
+ assert.equal(illustrativeImportedMotion(importedAnalysis,overflowing),null);
 });

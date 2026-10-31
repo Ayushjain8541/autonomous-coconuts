@@ -125,3 +125,18 @@ export function encounterSnapshot(row:Encounter){
 export function snapshotSample(snapshot:NonNullable<ReturnType<typeof encounterSnapshot>>){
  return {primary:[0,0,0] as [number,number,number],debris:snapshot.position.map(value=>value/snapshot.metresPerUnit) as [number,number,number],separationM:snapshot.separationM,metresPerUnit:snapshot.metresPerUnit};
 }
+
+
+/** Source-centered, short constant-velocity illustration; no epoch or orbital
+ * prediction is inferred, and source state is never declared closest approach. */
+export function illustrativeImportedMotion(analysis:AnalysisResult,row:Encounter){
+ if(analysis.source.mode!=='uploaded_csv')return null;
+ const snapshot=encounterSnapshot(row);if(!snapshot?.velocity)return null;
+ const speed=Math.hypot(...snapshot.velocity);
+ const halfWindowSeconds=Math.min(5,12/(speed/snapshot.metresPerUnit));
+ if(!Number.isFinite(halfWindowSeconds)||halfWindowSeconds<=0)return null;
+ const model={position:snapshot.position,velocity:snapshot.velocity,metresPerUnit:snapshot.metresPerUnit,halfWindowSeconds};
+ for(const t of [0,.5,1]){const sample=relativeMotionSample(model,t);if(!Number.isFinite(sample.separationM)||!sample.debris.every(Number.isFinite))return null;}
+ return model;
+}
+export function sourcePhaseLabel(time:number){const t=clampTime(time);return Math.abs(t-.5)<.015?'Source state':t<.5?'Before source state':'After source state';}

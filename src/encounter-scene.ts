@@ -3,9 +3,9 @@ import * as THREE from 'three';
 import type {AnalysisResult,Encounter} from '../web/client/contract.ts';
 import canonicalFixture from '../contracts/fixtures/analysis-demo.json';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { clampTime, phaseLabel, encounterMotion, relativeMotionSample, sliderSample, playbackStep, pointerEncounterTime } from '../web/client/encounter-model.ts';
+import { clampTime, phaseLabel, encounterMotion, encounterSnapshot, snapshotSample, relativeMotionSample, sliderSample, playbackStep, pointerEncounterTime } from '../web/client/encounter-model.ts';
 
-export function createEncounterScene(host: HTMLElement, missDistanceM: number | null, model:ReturnType<typeof encounterMotion>) {
+export function createEncounterScene(host: HTMLElement, missDistanceM: number | null, model:ReturnType<typeof encounterMotion>,snapshot:ReturnType<typeof encounterSnapshot>) {
   const canvas = document.createElement('canvas');
   canvas.setAttribute('aria-label','Conceptual local encounter. Drag to orbit; scroll to zoom. Arrow keys orbit.');
   canvas.tabIndex = 0;
@@ -59,6 +59,8 @@ export function createEncounterScene(host: HTMLElement, missDistanceM: number | 
   for(let i=0;i<3;i++){const direction=new THREE.Vector3();direction.setComponent(i,1);scene.add(new THREE.ArrowHelper(direction,new THREE.Vector3(),6,axisColors[i],.35,.18));const labelCanvas=document.createElement('canvas');labelCanvas.width=128;labelCanvas.height=64;const context=labelCanvas.getContext('2d')!;context.fillStyle='#c3d2e3';context.font='24px sans-serif';context.textAlign='center';context.fillText(['X · R','Y · T','Z · N'][i],64,38);const texture=new THREE.CanvasTexture(labelCanvas);const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthTest:false}));sprite.position.copy(direction.clone().multiplyScalar(6.8));sprite.scale.set(2.3,1.15,1);scene.add(sprite);}
   const velocityArrow=new THREE.ArrowHelper(new THREE.Vector3(0,1,0),new THREE.Vector3(),4,0xe7b768,.45,.2);velocityArrow.visible=false;scene.add(velocityArrow);
   const positionArrow=new THREE.ArrowHelper(new THREE.Vector3(0,1,0),new THREE.Vector3(),4,0x65d5ef,.45,.2);scene.add(positionArrow);
+  // An outline identifies coincident/near-coincident source points without moving them.
+  const debrisOutline=new THREE.Mesh(new THREE.IcosahedronGeometry(1.6,1),new THREE.MeshBasicMaterial({color:0xe7b768,wireframe:true,depthTest:false}));debrisOutline.renderOrder=3;debrisOutline.visible=false;scene.add(debrisOutline);
   const distanceLabel=document.createElement('div');distanceLabel.className='tca-distance-label';distanceLabel.hidden=true;host.append(distanceLabel);
   let currentTime = 0, disposed = false;
   function render() {
@@ -71,17 +73,21 @@ export function createEncounterScene(host: HTMLElement, missDistanceM: number | 
   controls.addEventListener('change',render);
   const resize = new ResizeObserver(()=>{fitCamera(true);render()}); resize.observe(host);
   function setTime(time:number) {
-    currentTime=clampTime(time); const sample=model?relativeMotionSample(model,currentTime):null;
+    currentTime=clampTime(time); const sample=model?relativeMotionSample(model,currentTime):snapshot?snapshotSample(snapshot):null;
     const visibility=sceneVisibility(sample!==null);primary.visible=visibility.primary;primary.position.set(0,0,0);
     debris.visible=visibility.debris;
-    velocityArrow.visible=positionArrow.visible=distanceLine.visible=primaryPath.visible=debrisPath.visible=tcaMarker.visible=visibility.vectors;
+    positionArrow.visible=distanceLine.visible=visibility.vectors;
+    primaryPath.visible=debrisPath.visible=tcaMarker.visible=!!model;
+    const velocity=model?.velocity??snapshot?.velocity;velocityArrow.visible=visibility.vectors&&!!velocity;
+    debrisOutline.visible=false;
     if(!sample){render();return;}
-    velocityArrow.position.fromArray(sample.debris);if(model){velocityArrow.setDirection(new THREE.Vector3(...model.velocity).normalize());velocityArrow.setLength(4,.45,.2);}
-    primary.position.fromArray(sample.primary);debris.position.fromArray(sample.debris);const relative=debris.position.clone().sub(primary.position);positionArrow.position.copy(primary.position);positionArrow.visible=relative.length()>1e-8;if(positionArrow.visible){positionArrow.setDirection(relative.clone().normalize());positionArrow.setLength(relative.length(),Math.min(.45,relative.length()*.2),Math.min(.2,relative.length()*.1));}debris.rotation.set(.3+currentTime,.5+currentTime*.7,.7);
+    velocityArrow.position.fromArray(sample.debris);if(velocity){velocityArrow.setDirection(new THREE.Vector3(...velocity).divideScalar(Math.hypot(...velocity)));velocityArrow.setLength(4,.45,.2);}
+    primary.position.fromArray(sample.primary);debris.position.fromArray(sample.debris);const relative=debris.position.clone().sub(primary.position);positionArrow.position.copy(primary.position);positionArrow.visible=relative.length()>1e-8;if(positionArrow.visible){positionArrow.setDirection(relative.clone().normalize());positionArrow.setLength(relative.length(),Math.min(.45,relative.length()*.2),Math.min(.2,relative.length()*.1));}debris.rotation.set(.3+(model?currentTime:0),.5+(model?currentTime*.7:0),.7);
+    const nearCoincident=!model&&relative.length()<2;debrisOutline.position.copy(debris.position);debrisOutline.visible=nearCoincident;amber.depthTest=!nearCoincident;debris.renderOrder=nearCoincident?2:0;
     distanceLine.geometry.dispose();distanceLine.geometry=new THREE.BufferGeometry().setFromPoints([primary.position.clone(),debris.position.clone()]);
-    distanceLine.visible=Math.abs(currentTime-.5)<1e-8;
+    distanceLine.visible=!!model&&Math.abs(currentTime-.5)<1e-8;
     tcaMarker.position.copy(primary.position);tcaMarker.visible=distanceLine.visible;tcaMarker.lookAt(camera.position);
-    for(const [line,key]of [[primaryPath,'primary'],[debrisPath,'debris']]as const){line.geometry.dispose();line.geometry=new THREE.BufferGeometry().setFromPoints([0,.5,1].map(t=>new THREE.Vector3(...relativeMotionSample(model!,t)[key])));}
+    if(model)for(const [line,key]of [[primaryPath,'primary'],[debrisPath,'debris']]as const){line.geometry.dispose();line.geometry=new THREE.BufferGeometry().setFromPoints([0,.5,1].map(t=>new THREE.Vector3(...relativeMotionSample(model!,t)[key])));}
     render();
   }
   canvas.addEventListener('keydown',event=>{
@@ -93,19 +99,30 @@ export function createEncounterScene(host: HTMLElement, missDistanceM: number | 
   // playback endpoints; linear motion stays inside their union. Never change telemetry.
   primary.updateMatrixWorld(true);framingBounds.setFromObject(primary);
   if(model){for(const time of [0,.5,1]){debris.position.fromArray(relativeMotionSample(model,time).debris);debris.updateMatrixWorld(true);const bounds=new THREE.Box3().setFromObject(debris);const sphere=bounds.getBoundingSphere(new THREE.Sphere());sphere.radius*=1.4;framingBounds.union(new THREE.Box3().setFromCenterAndSize(sphere.center,new THREE.Vector3().setScalar(sphere.radius*2)));}}
+  if(!model&&snapshot){
+    debris.position.fromArray(snapshotSample(snapshot).debris);debris.updateMatrixWorld(true);framingBounds.union(new THREE.Box3().setFromObject(debris));
+    if(snapshot.velocity){const endpoint=debris.position.clone().add(new THREE.Vector3(...snapshot.velocity).divideScalar(Math.hypot(...snapshot.velocity)).multiplyScalar(4));framingBounds.expandByPoint(endpoint.clone().addScalar(.45));framingBounds.expandByPoint(endpoint.clone().addScalar(-.45));}
+    framingBounds.expandByPoint(debris.position.clone().addScalar(1.6));framingBounds.expandByPoint(debris.position.clone().addScalar(-1.6));
+  }
   framingBounds.getBoundingSphere(framingSphere);
   reset();setTime(0);
   return {setTime,reset,zoom(factor:number){const offset=camera.position.clone().sub(controls.target);offset.setLength(Math.min(controls.maxDistance,Math.max(controls.minDistance,offset.length()*factor)));camera.position.copy(controls.target).add(offset);controls.update();render();},dispose(){disposed=true;resize.disconnect();controls.dispose();scene.traverse(object=>{if(object instanceof THREE.Sprite){object.material.map?.dispose();object.material.dispose();}if(object instanceof THREE.Mesh||object instanceof THREE.Line){object.geometry.dispose();const materials=Array.isArray(object.material)?object.material:[object.material];for(const material of materials)material.dispose();}});renderer.dispose();canvas.remove();distanceLabel.remove();}};
 }
 
 export function mountPlayback(host: HTMLElement, analysis:AnalysisResult,row:Encounter) {
-  const missDistanceM=row.miss_distance_m,model=encounterMotion(analysis,row,canonicalFixture as AnalysisResult);
-  host.innerHTML=`<div class="scene-camera"><button data-camera="in" aria-label="Zoom encounter in">+</button><button data-camera="out" aria-label="Zoom encounter out">−</button><button data-camera="reset">Focus / reset camera</button></div><div class="local-scene"></div><div class="scene-disclosure"><strong>Illustrative encounter${model?' · sizes exaggerated':' · relative geometry unavailable'}</strong></div><div class="playback"><div class="minimum-readout"></div><div class="playback-readout" aria-live="off"></div><div class="rubber-slider" tabindex="0" role="slider" aria-label="Normalized encounter phase" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="slider-track"><div class="slider-progress"></div><span class="tca-tick"></span><span class="slider-thumb"></span></div></div><div class="phase-labels"><span>Approach</span><span>TCA</span><span>Departure</span></div><div class="playback-buttons"><button data-play="toggle">Play</button><button data-play="restart">Restart</button><button data-play="tca">Jump to TCA</button><label>Speed <select aria-label="Playback speed"><option value=".5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select></label></div></div>`;
-  const motion=matchMedia('(prefers-reduced-motion: reduce)'),scene=createEncounterScene(host.querySelector<HTMLElement>('.local-scene')!,missDistanceM,model);
+  const missDistanceM=row.miss_distance_m,model=encounterMotion(analysis,row,canonicalFixture as AnalysisResult),snapshot=encounterSnapshot(row);
+  host.innerHTML=`<div class="scene-camera"><button data-camera="in" aria-label="Zoom encounter in">+</button><button data-camera="out" aria-label="Zoom encounter out">−</button><button data-camera="reset">Focus / reset camera</button></div><div class="local-scene"></div><div class="scene-disclosure"><strong>Illustrative encounter${model?' · sizes exaggerated':snapshot?' · source RTN snapshot · epoch unspecified · sizes exaggerated':' · relative geometry unavailable'}</strong></div><div class="playback"><div class="minimum-readout"></div><div class="playback-readout" aria-live="off"></div><div class="rubber-slider" tabindex="0" role="slider" aria-label="Normalized encounter phase" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="slider-track"><div class="slider-progress"></div><span class="tca-tick"></span><span class="slider-thumb"></span></div></div><div class="phase-labels"><span>Approach</span><span>TCA</span><span>Departure</span></div><div class="playback-buttons"><button data-play="toggle">Play</button><button data-play="restart">Restart</button><button data-play="tca">Jump to TCA</button><label>Speed <select aria-label="Playback speed"><option value=".5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select></label></div></div>`;
+  const motion=matchMedia('(prefers-reduced-motion: reduce)'),scene=createEncounterScene(host.querySelector<HTMLElement>('.local-scene')!,missDistanceM,model,snapshot);
+  if(!model){
+    const disclosure=host.querySelector<HTMLElement>('.scene-disclosure')!;
+    const note=document.createElement('span');note.textContent=snapshot?`Cyan: source relative position${snapshot.velocity?' · amber: velocity direction':''}`:'Distance alone cannot establish a relative position.';disclosure.append(note);
+    const explanation=snapshot?'Reference origin is a display convention; source epoch and vector sign convention are unspecified. Object sizes and velocity-arrow length are illustrative. This is a static source snapshot, not a TCA state or trajectory.':'No complete source RTN position supplied; object direction cannot be inferred from closest-approach distance.';
+    disclosure.title=explanation;host.querySelector('canvas')?.setAttribute('aria-label',`Local encounter reference display. ${explanation} Drag to orbit; scroll to zoom; arrow keys orbit.`);
+  }
   const slider=host.querySelector<HTMLElement>('.rubber-slider')!,thumb=host.querySelector<HTMLElement>('.slider-thumb')!,progress=host.querySelector<HTMLElement>('.slider-progress')!,readout=host.querySelector<HTMLElement>('.playback-readout')!,toggle=host.querySelector<HTMLButtonElement>('[data-play="toggle"]')!,speed=host.querySelector<HTMLSelectElement>('select')!;
   host.querySelector('.minimum-readout')!.textContent=`Predicted closest-approach distance: ${missDistanceM===null?'Unavailable':`${missDistanceM.toLocaleString()} m`}`;
   let time=0,playing=false,frame=0,last=0,holdMs=0,held=false;
-  function update(value:number){time=clampTime(value);scene.setTime(time);slider.setAttribute('aria-valuenow',String(Math.round(time*100)));slider.setAttribute('aria-valuetext',`${phaseLabel(time)}, ${Math.round(time*100)} percent of illustrative interval`);thumb.style.left=progress.style.width=`${time*100}%`;const sample=model?relativeMotionSample(model,time):null;readout.textContent=sample?`${phaseLabel(time)} · ${Math.abs(time-.5)<1e-8?'TCA miss distance':'Illustrative center separation'} ${sample.separationM.toLocaleString(undefined,{maximumFractionDigits:1})} m · synthetic local interval`:'Relative-motion data unavailable.';}
+  function update(value:number){time=clampTime(value);scene.setTime(time);slider.setAttribute('aria-valuenow',String(Math.round(time*100)));slider.setAttribute('aria-valuetext',`${phaseLabel(time)}, ${Math.round(time*100)} percent of illustrative interval`);thumb.style.left=progress.style.width=`${time*100}%`;const sample=model?relativeMotionSample(model,time):null;readout.textContent=sample?`${phaseLabel(time)} · ${Math.abs(time-.5)<1e-8?'TCA miss distance':'Illustrative center separation'} ${sample.separationM.toLocaleString(undefined,{maximumFractionDigits:1})} m · synthetic local interval`:snapshot?`Source-position separation ${snapshot.separationM.toLocaleString(undefined,{maximumFractionDigits:6})} m · ${snapshot.separationM/snapshot.metresPerUnit<2?'overlapping at illustrative object scale · ':''}static snapshot; playback unavailable`:'Relative position unavailable; playback unavailable.';}
   function pause(){playing=false;cancelAnimationFrame(frame);toggle.textContent='Play';}
   function tick(now:number){if(!playing)return;const delta=Math.min(100,now-last);last=now;const step=playbackStep(time,delta,Number(speed.value),holdMs,held);holdMs=step.holdMs;held=step.held;update(step.time);if(time>=1)pause();else frame=requestAnimationFrame(tick);}
   toggle.addEventListener('click',()=>{if(playing){pause();return;}if(!model)return;if(time>=1){update(0);held=false;}holdMs=0;playing=true;last=performance.now();toggle.textContent='Pause';frame=requestAnimationFrame(tick);});
@@ -118,7 +135,7 @@ export function mountPlayback(host: HTMLElement, analysis:AnalysisResult,row:Enc
   function release(event:PointerEvent){if(slider.hasPointerCapture(event.pointerId))slider.releasePointerCapture(event.pointerId);thumb.style.transform='translateX(-50%)';}
   slider.addEventListener('pointerup',release);slider.addEventListener('pointercancel',release);slider.addEventListener('lostpointercapture',()=>{thumb.style.transform='translateX(-50%)'});
   slider.addEventListener('keydown',event=>{if(!model)return;const actions:Record<string,number>={ArrowLeft:time-.01,ArrowDown:time-.01,ArrowRight:time+.01,ArrowUp:time+.01,PageDown:time-.1,PageUp:time+.1,Home:0,End:1};if(event.key in actions){event.preventDefault();pause();holdMs=0;held=true;update(actions[event.key])}});
-  if(!model){for(const button of host.querySelectorAll<HTMLButtonElement>('[data-play]'))button.disabled=true;slider.setAttribute('aria-disabled','true');slider.tabIndex=-1;}
+  if(!model){speed.disabled=true;for(const button of host.querySelectorAll<HTMLButtonElement>('[data-play]'))button.disabled=true;slider.setAttribute('aria-disabled','true');slider.tabIndex=-1;}
   const onVisibility=()=>{if(document.hidden)pause()};document.addEventListener('visibilitychange',onVisibility);
   update(0);
   return {dispose(){pause();document.removeEventListener('visibilitychange',onVisibility);scene.dispose();host.replaceChildren();}};

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { parseAnalysis } from '../client/contract.ts';
-import { schematicSample, sliderSample, advancePlayback, dashboardRows, maneuverReview, eventRoute, reportAgeHours, discreteHorizon, horizonStops, animatedMetric, easeOutCubic, playbackStep, pointerEncounterTime, encounterMotion, relativeMotionSample } from '../client/encounter-model.ts';
+import { schematicSample, sliderSample, advancePlayback, dashboardRows, maneuverReview, eventRoute, reportAgeHours, discreteHorizon, horizonStops, animatedMetric, easeOutCubic, playbackStep, pointerEncounterTime, encounterMotion, encounterSnapshot, snapshotSample, relativeMotionSample } from '../client/encounter-model.ts';
 const analysis = parseAnalysis(JSON.parse(readFileSync(new URL('../../contracts/fixtures/analysis-demo.json',import.meta.url),'utf8')));
 
 test('schematic TCA center separation matches actual miss distance under the one shared scale',()=>{
@@ -115,4 +115,37 @@ test('unknown epochs, missing geometry and non-TCA states never acquire fabricat
  assert.equal(encounterMotion(analysis,{...row,miss_distance_m:900},analysis),null);
  assert.equal(encounterMotion(analysis,{...row,geometry:{frame:'RTN',position_m:{r:800,t:0,n:0},velocity_mps:{r:1,t:7500,n:0}}},analysis),null);
  assert.equal(encounterMotion(analysis,{...row,geometry:{frame:'RTN',position_m:{r:800,t:0,n:0},velocity_mps:{r:0,t:0,n:0}}},analysis),null);
+});
+
+
+test('imported complete RTN position renders independently of velocity, epoch and predicted miss distance',()=>{
+ const base=analysis.encounters[0];
+ const row={...base,miss_distance_m:12,geometry:{frame:'RTN' as const,position_m:{r:300,t:-400,n:1200},velocity_mps:null}};
+ const snapshot=encounterSnapshot(row)!;assert.ok(snapshot);assert.equal(snapshot.separationM,1300);assert.equal(snapshot.velocity,null);
+ const sample=snapshotSample(snapshot);assert.deepEqual(sample.primary,[0,0,0]);
+ assert.deepEqual(sample.debris.map(value=>value*sample.metresPerUnit),[300,-400,1200]);
+ const imported={...analysis,source:{...analysis.source,mode:'uploaded_csv' as const},time_basis:'per_event_latest_report' as const,scenario_clock_utc:null};
+ assert.equal(encounterMotion(imported,row,analysis),null);
+ assert.equal(row.miss_distance_m,12);
+});
+test('nonperpendicular and zero velocities do not suppress a valid source snapshot or fabricate propagation',()=>{
+ const base=analysis.encounters[0];
+ const row={...base,geometry:{frame:'RTN' as const,position_m:{r:800,t:0,n:0},velocity_mps:{r:10,t:7500,n:0}}};
+ assert.deepEqual(encounterSnapshot(row)!.velocity,[10,7500,0]);assert.equal(encounterMotion(analysis,row,analysis),null);
+ assert.equal(encounterSnapshot({...row,geometry:{...row.geometry,velocity_mps:{r:0,t:0,n:0}}})!.velocity,null);
+ assert.equal(encounterSnapshot({...row,geometry:{...row.geometry,velocity_mps:{r:NaN,t:0,n:0}}})!.velocity,null);
+});
+test('missing, partial, nonfinite position and distance-only records never acquire a snapshot',()=>{
+ const base=analysis.encounters[0];assert.equal(encounterSnapshot({...base,geometry:null}),null);
+ for(const position of [{r:1,t:2},{r:1,t:Infinity,n:3},{r:NaN,t:0,n:0},{r:1,t:2,n:'3'},{r:1.79e308,t:1.79e308,n:1.79e308}]){
+  const row={...base,geometry:{frame:'RTN',position_m:position,velocity_mps:null}} as unknown as typeof base;
+  assert.equal(encounterSnapshot(row),null);
+ }
+});
+test('zero and near-coincident snapshot coordinates are never offset for visibility',()=>{
+ for(const r of [0,1e-12,.001]){
+  const row={...analysis.encounters[0],geometry:{frame:'RTN' as const,position_m:{r,t:0,n:0},velocity_mps:null}};
+  const snapshot=encounterSnapshot(row)!;const sample=snapshotSample(snapshot);
+  assert.equal(snapshot.separationM,r);assert.equal(sample.debris[0]*sample.metresPerUnit,r);assert.deepEqual(sample.debris.slice(1),[0,0]);assert.ok(sample.debris.every(Number.isFinite));
+ }
 });

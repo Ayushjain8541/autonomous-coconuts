@@ -22,7 +22,10 @@ def main():
     if not pnpm:raise SystemExit('pnpm is unavailable. Run start.command or install pnpm first.')
     for port in [api_port,web_port]:
         try:
-            with socket.socket() as check:check.bind(('127.0.0.1',port))
+            with socket.socket() as check:
+                # Match the HTTP server: permit restart while old connections close.
+                check.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
+                check.bind(('127.0.0.1',port))
         except OSError:raise SystemExit('Port %s is in use. Stop the old server, or set COCONUTS_PORT and COCONUTS_WEB_PORT.'%port)
     env=dict(os.environ)
     env['COCONUTS_API_TARGET']='http://127.0.0.1:%s'%api_port

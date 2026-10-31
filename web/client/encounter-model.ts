@@ -104,3 +104,24 @@ export function relativeMotionSample(model:NonNullable<ReturnType<typeof encount
  const relative=model.position.map((n,i)=>n+model.velocity[i]*seconds) as [number,number,number];
  return {time:t,seconds,primary:[0,0,0] as [number,number,number],debris:relative.map(n=>n/model.metresPerUnit) as [number,number,number],metresPerUnit:model.metresPerUnit,separationM:Math.hypot(...relative)};
 }
+
+
+/** A source-relative RTN snapshot has no epoch/trajectory claim. Its magnitude is
+ * independent of predicted closest-approach distance; never force them to agree. */
+export function encounterSnapshot(row:Encounter){
+ const geometry=row.geometry;
+ if(geometry?.frame!=='RTN'||!geometry.position_m)return null;
+ const r=geometry.position_m;
+ const position=[r.r,r.t,r.n] as [number,number,number];
+ if(!position.every(value=>typeof value==='number'&&Number.isFinite(value)))return null;
+ const separationM=Math.hypot(...position);
+ if(!Number.isFinite(separationM))return null;
+ const raw=geometry.velocity_mps;
+ const candidate=raw?[raw.r,raw.t,raw.n] as [number,number,number]:null;
+ const speed=candidate?Math.hypot(...candidate):0;
+ const velocity=candidate&&candidate.every(value=>typeof value==='number'&&Number.isFinite(value))&&Number.isFinite(speed)&&speed>0?candidate:null;
+ return {position,velocity,separationM,metresPerUnit:Math.max(separationM/4,1)};
+}
+export function snapshotSample(snapshot:NonNullable<ReturnType<typeof encounterSnapshot>>){
+ return {primary:[0,0,0] as [number,number,number],debris:snapshot.position.map(value=>value/snapshot.metresPerUnit) as [number,number,number],separationM:snapshot.separationM,metresPerUnit:snapshot.metresPerUnit};
+}

@@ -1,0 +1,20 @@
+# Local credentials and environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local datasets and scratch assets
+data/raw/
+work/
+tmp/
+.DS_Store
+
+# Common local runtime outputs; no runtime has been chosen
+node_modules/
+.next/
+dist/
+.venv/
+__pycache__/
+*.pyc

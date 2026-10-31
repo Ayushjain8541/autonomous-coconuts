@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hackathon Coordinator"
+  short_description: "Shape ideas, split team work, and ship hackathon demos"
+  default_prompt: "Use $hackathon-build to turn my hackathon problem statement into a feasible demo and teammate build plan."

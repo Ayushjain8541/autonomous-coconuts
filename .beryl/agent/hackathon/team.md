@@ -1,6 +1,6 @@
 # Team and independent working agreement
 
-Roles are **P1, P2, P3, P4**. Ayush is P2 and also owns overall coordination, integration decisions, merges and demo readiness. P4 remains floating support; earlier coordinator ownership assigned to P4 is superseded by this user clarification.
+Roles are **P1, P2, P3, P4**. Ayush is P2 and also owns overall coordination, integration decisions, merges and demo readiness. P4 remains floating support; earlier coordinator ownership assigned to P4, including the older shorthand in the preserved root AGENTS.md, is superseded by this user clarification.
 
 | Owner | Primary scope | Files requiring coordination |
 | --- | --- | --- |

@@ -13,5 +13,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: python3 scripts/check.py
+      # The pinned Beryl markdown checker scans ignored dependency folders.
+      # Run source gates on the clean checkout, then test the installed runtimes.
       - run: ./.beryl/scripts/check.sh
+      - run: python3 -m pip install -r backend/requirements-full.txt -r development/requirements.txt "pytest>=8,<10"
+      - run: npm install --global pnpm@11.25.0
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm build
+      - run: python3 -m pytest -q development/tests
+      - run: python3 scripts/check.py

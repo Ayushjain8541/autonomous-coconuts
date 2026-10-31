@@ -1,0 +1,3 @@
+# Model inference and PDF export in one server environment.
+-r requirements.txt
+-r ../prediction/requirements.txt

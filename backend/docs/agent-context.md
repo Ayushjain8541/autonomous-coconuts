@@ -6,6 +6,7 @@ Read root AGENTS.md, the product brief, P2 role brief and shared contracts. P2 o
 
 - server.py: real local HTTP routes, bounded multipart/raw CSV uploads, retained result retrieval, insights requests, schemas and development CORS.
 - ingestion.py: strict all-or-error CSV parsing into the public P3 request shape; source units/types/provenance preserved.
+- model_adapter.py: P2 bridge to the saved P3 per-report helper; feature whitelist, numeric ID support, model/encoder identity and explicit unavailable states.
 - analysis.py: invokes public ml functions, validates model outputs, selects latest source report, normalizes response/geometry and stores bounded TTL results.
 - config.py: reads ignored .env/.env.local plus process environment, without executing or logging secrets.
 - insights.py: bounded Anthropic Messages structured-output call; selects eligible review advice and combines it with source-rendered assessment facts/citations; explicit unavailable state on failure.
@@ -20,7 +21,7 @@ Read root AGENTS.md, the product brief, P2 role brief and shared contracts. P2 o
 
 ## Boundaries and truth
 
-HTTP keeps the shared v1 contract; schemas are in contracts/*.schema.json. prediction_report_ids is additive provenance for the restricted >=48h model input window. Fact references may include geometry. Public ml.predict_batch and ml.classify_encounter remain P3-owned. The current P3 adapter returns unavailable, so do not label null predictions or reported Pc as learned inference. The synthetic demo remains labeled. No global orbit coordinates are invented.
+HTTP keeps the shared v1 contract; schemas are in contracts/*.schema.json. prediction_report_ids identifies the scored latest report; the earlier >=48h final-forecast proposal has been superseded by the user-approved per-report model. Fact references may include geometry. Public ml.predict_batch and ml.classify_encounter remain P3-owned. The HTTP default now uses backend/model_adapter.py to call P3’s unchanged saved predictor. Missing inputs/runtime remain unavailable; never substitute reported Pc. The synthetic demo remains labeled. No global orbit coordinates are invented.
 
 The insight endpoint combines an exact source-rendered assessment with LLM-selected eligible review advice. It preserves the existing public response fields. The report endpoint uses the same context and writes actual narrative with validated references/numeric membership, eligible actions and explicit interpretation limits. What-if inputs are assumptions, not a maneuver optimizer or model-predicted improvements. Missing key, provider failure, refusal, unknown references or invalid output never blocks numeric analysis. Full reports use a separate 60s default deadline (maximum 90s); all provider calls share two global slots. API/retention limits, status codes and origin configuration are documented in backend/README.md. The server remains local development infrastructure, not a production deployment.
 

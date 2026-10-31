@@ -20,7 +20,7 @@ In the supplied synthetic fixture, the 24-hour critical list is empty; show **No
 
 ## Data truth and important limits
 
-The supplied test CSV has 24,484 rows and 2,167 encounters, with repeated reports per event. `t_*` describes the target, `c_*` the other object, and relative fields describe their encounter. It already includes earlier reported log-risk values. The shared v1 objective is the final available reported encounter log-risk forecast from reports at least two days before closest approach, with evaluation labels limited to final reports within one day. It predicts a later source-reported risk estimate, not observed collision occurrence. See contracts.md for the exact shared target and unsupported-input behavior.
+The supplied test CSV has 24,484 rows and 2,167 encounters, with repeated reports per event. `t_*` describes the target, `c_*` the other object, and relative fields describe their encounter. It already includes earlier reported log-risk values. The user selected P3’s existing per-report model: estimate log10(Pc) for the latest telemetry report per encounter. There is no final-report forecast or two-day input restriction. It estimates source-reported risk, not observed collision occurrence. See contracts.md for the exact shared target and unsupported-input behavior.
 
 All observed test rows have `time_to_tca > 2` days. A 36-hour demo cannot come directly from those horizons. **Load Demo uses clearly labeled synthetic interface data** until a genuine data-backed demo can satisfy the scenario; any precomputed fixture prediction remains marked fixture. CSV upload preserves source horizons. A successful demo-fixture view does not prove upload, ML or LLM integration.
 

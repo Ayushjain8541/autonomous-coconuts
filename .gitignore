@@ -40,3 +40,6 @@ development/artifacts/
 # Generated report samples and PDF render checks.
 /output/pdf/
 /tmp/pdfs/
+
+# Recreated from Cesium by the frontend postinstall script.
+/public/cesium/

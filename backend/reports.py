@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 import ml
 from .insights import ProviderError, AnthropicClient
 from .config import load_settings
-from .llm_context import CONTEXT_VERSION, OPERATIONS_BRIEF, build_analysis_context, event_evidence, geometry_availability, provider_context, _statement
+from .llm_context import CONTEXT_VERSION, NumericClaimError, OPERATIONS_BRIEF, build_analysis_context, event_evidence, geometry_availability, provider_context, _statement
 
 
 def _object(properties):
@@ -28,7 +28,7 @@ SYSTEM_PROMPT = OPERATIONS_BRIEF + """
 Write a professional satellite operations report for the mission operations team. Lead with which encounters need review and why. Use the supplied reference_assessment, value_availability and exact classification comparisons as the baseline. A supplied example Pc is NOT a missing Pc. Preserve every supplied tier and comparison direction.
 Keep the executive summary under 80 words: priorities and recommended review steps, with no numbers or event-by-event inventory; the tables carry the counts. Provide 2-3 short key findings. Explain every priority encounter once in supplied order, using one short assessment and at most two eligible review actions when sufficient. Action rationales explain the purpose of the review, not a new risk calculation.
 For what_if_summary, copy the supplied what_if_reference text and fact_ids exactly. Its comparisons come directly from the classifier. Do not rewrite the scenario outcomes or multipliers; these are assumed inputs, not predicted maneuver benefits.
-Cite each statement using exact fact_ids, in the array only. Each numeric claim must cite its source. Refer to numeric identifiers as encounter <ID>. Do not compute additional counts or statistics. Only use eligible advisory action IDs.
+Cite each statement using exact fact_ids, in the array only. Each numeric claim must cite its source. Use the supplied display_value for hours when available; do not round other measurements arbitrarily. Cohort counts must cite portfolio.detailed_count. Refer to numeric identifiers as encounter <ID>. Do not compute additional counts or statistics or invent a new review window; only the supplied 24-hour window is configured. Only use eligible advisory action IDs.
 Use estimated collision probability, predicted closest separation, and hours from the reference report/scenario clock. Avoid countdowns from today. Safe is not a clearance. For synthetic_demo, identify the report once as a demonstration using example values. Avoid developer words such as fixture, schema, validation, pipeline and fallback in the report prose. Return the required JSON structure only."""
 
 
@@ -186,7 +186,21 @@ class ReportService:
             summary=_statement(output['executive_summary'],context['facts'],limit=1400)
             findings=output['key_findings'];items=output['encounters']
             if not isinstance(findings,list) or not 2<=len(findings)<=5:raise ProviderError('Invalid report findings count.')
-            findings=[_statement(x,context['facts']) for x in findings]
+            checked=[]
+            for index, finding in enumerate(findings):
+                try:checked.append(_statement(finding,context['facts']))
+                except NumericClaimError:
+                    if index%2:
+                        replacement={'text':'The detailed review covers %s encounters; %s critical encounters fall within 24 hours of their report reference.' % (
+                            len(context['priority_encounters']),context['statistics']['critical_within_24h']),
+                            'fact_ids':['portfolio.detailed_count','portfolio.critical_within_24h']}
+                    else:
+                        replacement={'text':'The analysis contains %s encounters, including %s in the critical assessment tier.' % (
+                            context['statistics']['total_encounters'],context['statistics']['severity_counts']['critical']),
+                            'fact_ids':['portfolio.total','portfolio.critical']}
+                    checked.append(_statement(replacement,context['facts']))
+                    result['warnings'].append('AI key finding %s included unsupported numbers and was replaced with the cited analysis facts.'%(index+1))
+            findings=checked
             if not isinstance(items,list) or len(items)!=len(context['priority_encounters']):raise ProviderError('Report omitted priority encounters.')
             normalized=[]
             for item,event in zip(items,context['priority_encounters']):

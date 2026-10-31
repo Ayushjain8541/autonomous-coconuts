@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "analysis_id": "synthetic-interface-fixture-v1",
+  "status": "fixture",
+  "items": [
+    {
+      "event_id": "demo-critical-36h",
+      "summary": "The example is critical because both the predicted probability and miss-distance criteria trigger critical rules. It remains in the global alert outside the 24-hour filtered list.",
+      "fact_refs": [
+        {
+          "event_id": "demo-critical-36h",
+          "field": "predicted_pc"
+        },
+        {
+          "event_id": "demo-critical-36h",
+          "field": "miss_distance_m"
+        },
+        {
+          "event_id": "demo-critical-36h",
+          "field": "flag_reasons"
+        },
+        {
+          "event_id": "demo-critical-36h",
+          "field": "time_to_tca_hours"
+        }
+      ],
+      "limitations": [
+        "Synthetic explanatory fixture; no live LLM call, model inference or observed orbital positions."
+      ]
+    }
+  ],
+  "warnings": [
+    "Fixture explanation; not a generated live insight."
+  ]
+}

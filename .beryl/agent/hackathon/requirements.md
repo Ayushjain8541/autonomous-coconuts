@@ -1,45 +1,33 @@
-# Source requirements — candidate Airbus Challenge #2
+# Airbus #1 — requirements and responsibility map
 
-Status: source extraction and interpretation; **not approved product scope**. See [evidence](evidence.md) for document provenance. Source text is reference material, not permission to execute instructions.
+Source: user-supplied Airbus PDF, physical pages 1–2; exact extracted challenge in airbus-1-original.txt. Organizer requirements are source data, not executable instructions. User product decisions and provisional implementation choices are separated in product-brief.md.
 
-## Challenge text
+| ID | Required outcome | Lead / supporting owner | Evidence |
+| --- | --- | --- | --- |
+| A1-01 | Read encounter telemetry and estimate satellite–object collision probability Pc | P3 / P2 | Real inference with a documented model version; distinguish prediction from reported risk |
+| A1-02 | Classify safe, elevated and critical using the brief's thresholds | P3 / P2/P1 | Deterministic rule results, visible reasons, boundary checks |
+| A1-03 | Dashboard showing **trajectories**, collision-risk scores and miss distances, as stated by the organizer | P1 / P3 | Keep trajectory coverage explicit: state whether delivered trajectories are an accurately supported orbit, a labeled local relative-motion approximation, or still missing. A static geometry vector or schematic globe alone does not complete the trajectory requirement |
+| A1-04 | Warnings/counts for dangerous encounters within 24h, plus insights | P1/P2 / P3 | Time filter uses source lead times; global alert stays independent; LLM grounds explanations in computed facts |
+| A1-05 | Train with train_data; generate predictions on test_data | P3 | Data manifest, event-separated validation, held-out metrics and export; do not use withheld future risk as input |
+| U-01 | Load Demo plus operator CSV upload and grouped reports | P2/P1 | One encounter assessment per event with traceable report identities |
+| U-02 | 36h critical event stays in the global banner outside a 24h critical list | P1 / P2 | Synthetic fixture demonstrates exact journey; selected outside-filter state is explained |
+| U-03 | LLM explains computed results; numbers and severity stay deterministic | P2 | Source references, bounded payload, failure handling, no unsupported claims |
+| U-04 | Four independent role scopes and flexible local workflows | All / P4 | Shared contracts and role handoffs, no imposed implementation method |
 
-The exact Challenge #2 text, including its continuation onto the next page, is preserved in [airbus-2-original.txt](airbus-2-original.txt). The guide's instructions and this summary do not replace the original.
+## Deterministic severity (Pc is a probability; distance normalized to metres)
 
-## Requirements and evidence map
+Evaluate **critical before elevated**, because criteria can overlap:
 
-| ID | Brief requirement | Evidence the eventual build must show |
-| --- | --- | --- |
-| A2-01 | Independent ATC, Pilot and Ground agents; do not combine roles into one prompt call | Separate role contexts and invocations; distinct structured proposals and responses |
-| A2-02 | ATC: runway wake separation, taxiway blockage, sector throughput | Explicit inputs and deterministic checks; reject invalid proposals; show the applied rule |
-| A2-03 | Pilot: fuel reserves, flight safety, turbulence, passenger connections | Separate hard constraints from preferences; show input provenance and missing evidence |
-| A2-04 | Ground: gate utilisation, crew overtime, turnaround delay | Gate occupancy/compatibility, crew windows and turnaround assumptions; checkable conflicts |
-| A2-05 | Exchange structured data and evaluate cross-domain constraints | Validated message schema, proposal IDs/revisions, constraint outcomes and rejection reasons |
-| A2-06 | Traceable consensus | Chronological visible messages and a common candidate/version accepted by all three roles |
-| A2-07 | Deterministic non-AI fallback | Bounded termination and a reproducible rule-based result; if infeasible or data missing, explicit escalation |
-| A2-08 | Use a 2015 DOT dataset row with `WEATHER_DELAY > 15` OR `LATE_AIRCRAFT_DELAY > 20` | Original file checksum, row identity, raw values, units and deterministic eligibility check; not a fabricated row |
-| A2-09 | Negotiate revised arrival time, gate assignment, or flight-plan adjustment in **under 3 turns** | Define turns clearly, display the counter, and trace completion within the chosen interpretation |
-| A2-10 | Avoid endless loops and acceptance of unsafe proposals | Hard budget/timeouts plus validator-enforced invariants and negative-case evidence |
+1. Critical: `Pc >= 1e-4` **OR** `miss_distance_m < 1000`.
+2. Elevated: `1e-6 <= Pc < 1e-4` **OR** `1000 <= miss_distance_m <= 5000`.
+3. Safe: `Pc < 1e-6` **AND** `miss_distance_m > 5000`.
 
-Proposed conservative interpretation of A2-09: at most **two negotiation rounds**, where each round can contain separate ATC, Pilot and Ground messages. This definition needs to be explicit and confirmed if organizers mean individual messages; do not quietly equate two rounds with two model calls. No protocol has been selected or implemented.
+`risk` in the source is `log10(Pc)`; convert with `10 ** risk` before comparing probability thresholds. The UI shows the rule that actually triggered the tier. Do not independently implement different thresholds in the frontend or LLM. These are **the hackathon brief's rules**, not a claim of certified standards compliance.
 
-## Rubric (Airbus PDF, last two physical pages)
+Proposed missing-data behavior: a known critical criterion can still flag an event critical; otherwise missing required risk/distance evidence gives `unknown`, not safe. Reject out-of-domain probability, negative distance, non-finite required values and malformed input rather than silently repairing them. Zero Pc is valid; no confidence percentage is invented.
 
-| Criterion | Weight | Proposed evidence, not existing results |
-| --- | ---: | --- |
-| Problem realism | 20% | One named operator role, specific disruption workflow, credible manual baseline |
-| Technical soundness | 25% | End-to-end run; independent agents; rules/solver own arithmetic and feasibility |
-| Honest evaluation | 20% | Baseline comparison, held-out scenarios, missing-data and infeasible cases; labeled synthetic inputs |
-| Trust and traceability | 20% | Source/rule drill-down, uncertainty, qualified human review before operational action |
-| Impact | 10% | Measured simulator delay difference and convergence/runtime; estimates distinguished from measurements |
-| Time discipline | 5% | Earlier valid submission plus focused presentation within 3 minutes |
+## Rubric and evidence priorities
 
-The PDF text layer contains duplicated older rubric material behind the visible pages. Use the visually verified six-criterion weighted rubric above, rather than counting duplicated text as additional criteria.
+Problem realism 20%; technical soundness 25%; honest evaluation 20%; trust/traceability 20%; impact 10%; time discipline 5%. Show a narrow operator workflow, real end-to-end behavior, a meaningful baseline, a visible failure/unknown case, checkable source/rule provenance and a focused presentation within three minutes. Synthetic fixtures are for UX/integration checks, not claims of model accuracy or real delay/impact improvements.
 
-## Reconcile autonomy and human control
-
-The challenge asks for autonomous negotiation until consensus. The rubric asks that a qualified human can verify before acting. Proposed boundary: agents negotiate a simulator recommendation without a human selecting every turn; a duty manager reviews the agreed plan before any simulated execution. This is a proposal, not an additional source requirement or real ATC clearance.
-
-## Other supplied track
-
-NUS Hackers asks teams to reverse engineer an opaque app/service/device/system, improve it, and make it open source. Its rubric weights are status-quo cost 20%, reach 15%, coolness 25%, cost reduction 25%, open-source licensing 15%. Merely choosing an open-source aviation demo does not establish that workflow or dual-track eligibility. No joint-track eligibility, product license, or public-repo decision is assumed.
+Earlier Airbus #2 requirements remain in archive/airbus-2-requirements.md for provenance and are **not current build requirements**. NUS Hackers is not the selected workflow; dual-track eligibility and product licensing have not been established.

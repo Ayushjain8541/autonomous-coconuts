@@ -23,9 +23,13 @@ REPORT_OUTPUT_SCHEMA = _object({
     'encounters':{'type':'array','items':_object({'event_id':{'type':'string'},'assessment':STATEMENT,
         'actions':{'type':'array','items':_object({'action_id':{'type':'string'},'rationale':STATEMENT})}})},
     'what_if_summary':STATEMENT})
-SYSTEM_PROMPT = '''Write a concise satellite-encounter risk briefing for a human operator, using only supplied facts.
+SYSTEM_PROMPT = '''Write a professional satellite operations report that an encounter analyst could send to the mission operations team. Use only supplied facts.
+Write for the reader making a review decision: what needs attention, why it matters, and what to check next. Use direct, plain language and short paragraphs. Lead with the priority encounter and the recommended review step, rather than describing the software.
+Call Pc the estimated collision probability and miss distance the predicted closest separation. Explain time to closest approach in hours. Keep estimated and reported Pc distinct. Refer to numeric identifiers as encounter <ID>, never as bare numeric quantities.
+Do not use software/testing language such as fixture, validation, deterministic, schema, pipeline, fallback or rule engine in the report prose. For synthetic_demo, identify the report once as a demonstration using example values; do not repeat that label in every sentence. For historical reports, make clear that lead times are measured from the source reports, not from today.
+Describe classifications as assessment tiers. Explain probability above its limit and separation below its limit separately; never say that probability and separation both exceed or both fall below their limits. Focus the executive summary on priorities and next steps rather than repeating every table value. Use needs assessment for unknown outcomes. Keep all supplied severity classifications unchanged. A safe tier is not a clearance. Lower Pc and greater separation are favorable.
 Synthesize the whole-portfolio statistics, then explain every supplied priority encounter exactly once in the supplied order.
-Give an executive summary, 2-3 key findings, each encounter assessment, 1-3 eligible advisory actions per encounter, and a what-if interpretation. Be concise: one short sentence per assessment/action, at most two actions when enough, executive summary under 80 words and what-if under 100 words focusing on the most consequential encounters.
+Give an executive summary, 2-3 key findings, each encounter assessment, 1-3 eligible advisory actions per encounter, and a what-if interpretation. Action rationales should explain why the step matters, not repeat the action label. Be concise: one short sentence per assessment/action, at most two actions when enough, executive summary under 80 words and what-if under 100 words focusing on the most consequential encounters.
 Every statement must cite the exact fact_ids that support it. Cite each numeric claim; use numbers exactly as supplied (probabilities may also be expressed as percentages). Do not number prose, compute new statistics, or claim calibration/confidence.
 The what-if table changes assumed Pc and/or miss distance independently and reapplies fixed classification rules. It is NOT an orbital simulation, an achievable maneuver, or a new ML prediction. Explain why changing one assumption may leave another critical trigger active. Pc is an estimate, not a control an operator can directly set.
 Use only eligible action IDs. Actions are requests for review, updated evidence or flight-dynamics assessment. Never provide burn vectors, delta-v, execution times, commands, operational clearance, or guaranteed safety.
@@ -49,12 +53,12 @@ def _actions(event):
     result = []
     def add(code,label):result.append({'action_id':code,'label':label})
     if event['severity']=='critical':
-        add('ESCALATE_REVIEW','Escalate for operator review')
-        add('REQUEST_FLIGHT_DYNAMICS','Request flight-dynamics maneuver assessment')
-    if event['prediction_status']=='unavailable':add('CHECK_PREDICTION','Resolve missing prediction evidence')
-    if not event.get('geometry'):add('CHECK_GEOMETRY','Obtain complete encounter geometry')
-    add('REFRESH_TRACKING','Obtain current tracking before operational decisions')
-    if event['severity'] in {'safe','elevated'}:add('MONITOR_UPDATES','Review subsequent encounter updates')
+        add('ESCALATE_REVIEW','Escalate to mission operations')
+        add('REQUEST_FLIGHT_DYNAMICS','Ask flight dynamics to assess avoidance options')
+    if event['prediction_status']=='unavailable':add('CHECK_PREDICTION','Obtain the missing risk estimate')
+    if not event.get('geometry'):add('CHECK_GEOMETRY','Request the missing encounter geometry')
+    add('REFRESH_TRACKING','Refresh tracking before deciding')
+    if event['severity'] in {'safe','elevated'}:add('MONITOR_UPDATES','Continue monitoring this encounter')
     return result
 
 
@@ -195,14 +199,14 @@ class ReportService:
                         'omitted_encounters':len(analysis['encounters'])-len(context['priority_encounters']),
                         'policy':'Critical, elevated, unknown, safe; then earliest source-relative lead time; maximum ten detailed encounters.'},
             'executive_summary':None,'key_findings':[],'priority_events':[],'what_if_summary':None,
-            'limitations':['Advisory briefing for operator review; not an operational maneuver instruction or safety clearance.',
-                'What-if inputs are independent assumptions, not achievable maneuvers, predicted reductions, or an orbital simulation.',
-                'Free-form narrative references and numeric claims are checked; references alone do not prove every interpretation.',
-                'Narrative covers at most ten priority encounters; portfolio counts cover all encounters.'],
+            'limitations':['Use this briefing to prioritize review; confirm current tracking before deciding on an avoidance plan.',
+                'What-if cases assume different risk estimates or separations; they do not show a feasible maneuver or predict its outcome.',
+                'Interpretations may need specialist review; check the supporting encounter values before acting.',
+                'Detailed reviews cover up to ten priority encounters; the overall counts include every encounter.'],
             'warnings':list(analysis['warnings']),
             'pdf_url':'/api/analyses/%s/reports/%s.pdf'%(analysis['analysis_id'],report_id)}
-        if analysis['source']['mode']=='synthetic_demo':result['limitations'].append('Synthetic demo values; not observed telemetry or trained predictions.')
-        if analysis['time_basis']=='per_event_latest_report':result['limitations'].append('Lead times use each historical report reference; events do not share a current clock.')
+        if analysis['source']['mode']=='synthetic_demo':result['limitations'].append('Synthetic demonstration values are used here; these are not current satellite observations.')
+        if analysis['time_basis']=='per_event_latest_report':result['limitations'].append('Lead times come from separate source reports, rather than a shared live clock.')
         try:
             if not self._slots.acquire(blocking=False):raise ProviderError('Report generation is busy; retry explicitly later.')
             try:output=client.generate_structured(SYSTEM_PROMPT,context,REPORT_OUTPUT_SCHEMA,max_tokens=4096)
@@ -228,7 +232,7 @@ class ReportService:
                     refs=event['fact_ids'];values=context['facts']
                     pc=values[refs['predicted_pc']]['value'];distance=values[refs['miss_distance_m']]['value']
                     severity=values[refs['severity']]['value']
-                    assessment={'text':'Classification is %s under the configured rules. Forecast Pc: %s; source-predicted miss distance: %s m. This is not an operational clearance.'%(
+                    assessment={'text':'This encounter is in the %s tier. Estimated collision probability (Pc): %s; predicted closest separation: %s m. Review the assessment before making an operational decision.'%(
                         severity,'unavailable' if pc is None else '%.6g'%pc,'unavailable' if distance is None else '%.6g'%distance),
                         'fact_ids':[refs['severity'],refs['predicted_pc'],refs['miss_distance_m']]}
                     assessment_status='factual_fallback'

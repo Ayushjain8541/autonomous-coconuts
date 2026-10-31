@@ -1,5 +1,7 @@
 # Integration review — 31 October 2026
 
+**Updated after P1's fixes landed on main (`b25acab`).** The six consumer gaps in the historical review below are resolved by P1's `e33f6ec` integration changes. A current browser rehearsal passed Load Demo, the 24h-filter/global-banner case, critical/elevated/safe views, exact 800 m demo TCA playback, live insights, an actual downloaded analytical PDF, and real CSV upload showing 2,167 encounters. See `docs/demo-readiness.md`. No additional UI changes were made during verification.
+
 User scope: fetch all published work, review integration, then **do not change any UI**. All temporary frontend edits were reverted. This branch has no changes under `src/` or `web/`, and does not change P3's model, predictor, training or classification source.
 
 ## Integrated on this branch
@@ -12,7 +14,7 @@ User scope: fetch all published work, review integration, then **do not change a
 - The pinned Beryl markdown checker also traverses ignored dependency folders. CI runs its complete source gate before dependency installation; local source gates are verified from a clean worktree. Full native/frontend checks run separately in the populated development environment; no managed check is weakened.
 - CI now exercises the existing frontend tests/build and P3 tests as well as backend checks. Generated Cesium assets are ignored and recreated by the existing postinstall script.
 
-## Remaining P1 connections — deliberately unchanged
+## Previous P1 connections — now resolved by P1
 
 | Priority | Source | Concrete issue / reproduction |
 | --- | --- | --- |
@@ -37,7 +39,7 @@ The original P1 landing → API Load Demo → critical-within-24h filter → glo
 | --- | ---: | --- |
 | Critical | 0 | None found in reviewed application paths |
 | High | 0 | Model-wiring and stale-window blockers addressed |
-| Medium | 6 | P1 consumer/configuration items above; unchanged by request |
+| Medium | 0 | Six historical consumer/configuration gaps resolved by P1 |
 | Low | 0 | No style-only findings included |
 
-Verdict: backend integration is ready for coordinated review; frontend wiring remains with P1. This is a runtime/contract review, not a formal proof of every free-form model statement or an audit of vendored skills/dependencies.
+Current verdict: the local demo journey is verified after the P1 integration. Hosting/submission and operational model accuracy are separate and are not certified by this rehearsal. This is a runtime/contract review, not a formal proof of every free-form model statement or an audit of vendored skills/dependencies.

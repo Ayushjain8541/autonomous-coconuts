@@ -1,6 +1,6 @@
 # Team and independent working agreement
 
-Roles are **P1, P2, P3, P4**, as requested by the user. Do not invent names or demand a name mapping before starting.
+Roles are **P1, P2, P3, P4**. Ayush is P2 and also owns overall coordination, integration decisions, merges and demo readiness. P4 remains floating support; earlier coordinator ownership assigned to P4, including the older shorthand in the preserved root AGENTS.md, is superseded by this user clarification.
 
 | Owner | Primary scope | Files requiring coordination |
 | --- | --- | --- |
@@ -9,11 +9,11 @@ Roles are **P1, P2, P3, P4**, as requested by the user. Do not invent names or d
 | P3 | `ml/`, model artifacts/manifests, training/data transforms, prediction adapter, deterministic tiers and ML/rule tests | Rule semantics in requirements.md with P2/P1; integration packaging with P2 |
 | P4 | `docs/`, root README/setup integration, `tests/e2e/`, optional CI/deployment config, open-task queue and integration ledger | May assist an owned area only through a scoped claim agreed with its owner |
 
-These are ownership boundaries, not mandatory final frameworks or internal folder trees. A replaceable browser/server baseline now exists, with local context in each development area. Owners may agree a different boundary; update the contract and affected role briefs together. P4 coordinates integration and root/shared setup; P2 remains the API contract owner. Each role owns its handoff at `.beryl/agent/hackathon/handoffs/Pn.md`.
+These are ownership boundaries, not mandatory final frameworks or internal folder trees. A replaceable browser/server baseline now exists, with local context in each development area. Owners may agree a different boundary; update the contract and affected role briefs together. Ayush coordinates integration and root/shared setup; P2 remains the API contract owner. P4 may assist through bounded open-task claims. Each role owns its handoff at `.beryl/agent/hackathon/handoffs/Pn.md`.
 
 ## Branches and handoffs
 
-Suggested branches: `p1/ui`, `p2/backend-llm`, `p3/ml-algorithm`, `p4/<small-task>`. Start from fetched `origin/main`; inspect current files and open PRs before writing. Never reset another person's work or force-push shared main. Submit a focused branch/PR with actual checks, limitations and setup changes. P4 reviews contract compatibility and coordinates merges; no automatic merge or publishing is authorized merely by these docs.
+Suggested branches: `p1/ui`, `p2/backend-llm`, `p3/ml-algorithm`, `p4/<small-task>`. Start from fetched `origin/main`; inspect current files and open PRs before writing. Never reset another person's work or force-push shared main. Submit a focused branch/PR with actual checks, limitations and setup changes. Ayush reviews contract compatibility and coordinates merges; no automatic merge or publishing is authorized merely by these docs.
 
 If you open a PR, include its canonical role/ticket link. If your agent has Codex artifact tools, attach the PR to its chat. Do not message teammates or other chats unless the human authorizes that communication.
 

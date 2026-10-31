@@ -9,7 +9,7 @@
 Turn conjunction reports into a prioritized view of satellite encounters—
 with learned risk estimates, interactive geometry and AI-assisted briefings.
 
-**[Explore the product](#inside-the-console) · [Run locally](#run-locally) · [ML results](#ml-training-and-benchmark-evidence) · [Data and limits](#data-and-interpretation)**
+**[Watch the live demo](https://www.youtube.com/watch?v=QCxIsH1zZBE) · [Explore the product](#inside-the-console) · [Run locally](#run-locally) · [ML results](#ml-training-and-benchmark-evidence) · [Data and limits](#data-and-interpretation)**
 
 ![Model: XGBoost](https://img.shields.io/badge/Model-XGBoost-0f766e?style=flat-square)
 ![AI: Claude](https://img.shields.io/badge/AI-Claude-12304a?style=flat-square)
@@ -19,6 +19,10 @@ with learned risk estimates, interactive geometry and AI-assisted briefings.
 </div>
 
 ---
+
+## Live demo
+
+[Watch the Coconut Autonomous live demo on YouTube](https://www.youtube.com/watch?v=QCxIsH1zZBE).
 
 ## From encounter reports to a review decision
 

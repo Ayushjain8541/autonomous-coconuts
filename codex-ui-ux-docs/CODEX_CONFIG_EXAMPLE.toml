@@ -1,0 +1,9 @@
+# OPTIONAL. Merge into an existing .codex/config.toml; don't overwrite it.
+# Codex subagents are currently enabled by default. This section is useful
+# if you want an explicit cap. Running many agents costs extra tokens.
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 4
+
+# No model specified: use the model configured in the parent Codex session.
+# Individual roles are defined in .codex/agents/*.toml.

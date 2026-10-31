@@ -1,0 +1,24 @@
+{
+  "version": "1.0.0",
+  "created": "2026-10-30",
+  "role_count": 16,
+  "skill_count": 7,
+  "roles": [
+    "design_director",
+    "product_flow_strategist",
+    "visual_art_director",
+    "figma_handoff_specialist",
+    "design_system_architect",
+    "frontend_implementer",
+    "ui_refactoring_specialist",
+    "ux_heuristics_auditor",
+    "accessibility_auditor",
+    "responsive_layout_auditor",
+    "motion_interaction_engineer",
+    "ux_microcopy_editor",
+    "ethical_engagement_analyst",
+    "visual_critique_reviewer",
+    "functional_ui_tester",
+    "independent_design_challenger"
+  ]
+}

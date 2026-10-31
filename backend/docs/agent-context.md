@@ -9,6 +9,8 @@ Read root AGENTS.md, the product brief, P2 role brief and shared contracts. P2 o
 - analysis.py: invokes public ml functions, validates model outputs, selects latest source report, normalizes response/geometry and stores bounded TTL results.
 - config.py: reads ignored .env/.env.local plus process environment, without executing or logging secrets.
 - insights.py: bounded Anthropic Messages structured-output call; validates supported observation selection and renders grounded explanations/citations; explicit unavailable state on failure.
+- reports.py: full LLM narrative, portfolio counts, cited priority assessments, advisory actions and deterministic P3 rule-sensitivity what-ifs; exact report retention/cache.
+- report_pdf.py: optional ReportLab export with provenance, action rationale and comparison tables. Install backend/requirements.txt in the server environment.
 - README.md: exact setup, API recipe, limits and P1/P3 integration details. No external runtime dependency or API key is required for upload/numeric paths.
 
 ## Commands from repo root
@@ -19,6 +21,6 @@ Read root AGENTS.md, the product brief, P2 role brief and shared contracts. P2 o
 
 HTTP keeps the shared v1 contract; schemas are in contracts/*.schema.json. prediction_report_ids is additive provenance for the restricted >=48h model input window. Fact references may include geometry. Public ml.predict_batch and ml.classify_encounter remain P3-owned. The current P3 adapter returns unavailable, so do not label null predictions or reported Pc as learned inference. The synthetic demo remains labeled. No global orbit coordinates are invented.
 
-Anthropic selects only supported observations from authoritative stored facts. Missing key, provider failure, refusal, unknown event/observation or invalid output never blocks numeric analysis. API/retention limits, status codes and origin configuration are documented in backend/README.md. The server remains local development infrastructure, not a production deployment.
+The old insight endpoint selects supported observations. The additive report endpoint writes actual narrative with validated references/numeric membership, eligible actions and explicit interpretation limits. What-if inputs are assumptions, not a maneuver optimizer or model-predicted improvements. Missing key, provider failure, refusal, unknown references or invalid output never blocks numeric analysis. Full reports use a separate 60s default deadline (maximum 90s); all provider calls share two global slots. API/retention limits, status codes and origin configuration are documented in backend/README.md. The server remains local development infrastructure, not a production deployment.
 
 Handoff and actual check evidence: .beryl/agent/hackathon/handoffs/P2.md. Update test manifest intentionally when adding tests. Preserve teammate changes; coordinate contract changes and PR integration.

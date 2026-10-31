@@ -47,3 +47,8 @@ Frameworks, language/tooling within owned areas, visual design, model family, in
 ## Evidence of completion
 
 The real upload → grouped inference → classification → visual details journey works beyond a canned fixture. The LLM's status and provenance are visible. One failure/missing-data case is demonstrated. Evaluation reports compare a model with a stated baseline on separated events and make no unsupported real-world benefit claims. See requirements/evaluation for ownership and evidence.
+
+
+## User-directed report extension
+
+Add a full LLM analytical report: whole-portfolio statistics, cited priority assessments, supported advisory actions and what-if interpretation. Keep the website concise; P1 only needs generate/download report access, not a new simulation view. P2 owns JSON/PDF production. What-if detail stays in the report and tests independently assumed Pc/miss-distance changes through P3's existing rule function. These sensitivity cases are not actual maneuver planning or achievable risk-reduction predictions. True orbital/burn optimization still requires additional input and is not claimed.

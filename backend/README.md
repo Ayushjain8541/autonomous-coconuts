@@ -1,6 +1,6 @@
 # P2 backend
 
-Python 3.9+ standard library only. No package install or OpenAI key is required. This local-development server can be replaced by P2's chosen runtime while preserving the shared HTTP/ML contracts.
+Python 3.9+ standard library for the core numeric API and JSON reports. PDF export uses the optional ReportLab extra below. No OpenAI key is required. This local-development server can be replaced by P2's chosen runtime while preserving the shared HTTP/ML contracts.
 
 ## Start
 
@@ -23,6 +23,7 @@ Provider settings are read on each request, so adding a key does not require res
 | ANTHROPIC_API_KEY | Blank; required only for live insights |
 | ANTHROPIC_MODEL | claude-haiku-4-5-20251001; change to an available model if your account requires it |
 | ANTHROPIC_TIMEOUT_SECONDS | 25; allowed range 1–60 |
+| ANTHROPIC_REPORT_TIMEOUT_SECONDS | 60; allowed range 1–90; full report generation only |
 | COCONUTS_CORS_ORIGINS | localhost/127.0.0.1 on ports 5173 and 3000; comma-separated override |
 
 Host/port can be set by CLI flags or process environment COCONUTS_HOST/COCONUTS_PORT. The local env-file reader loads provider/CORS settings without executing shell expressions. No provider error includes the credential or raw provider response.
@@ -36,6 +37,8 @@ Host/port can be set by CLI flags or process environment COCONUTS_HOST/COCONUTS_
 | POST /api/analyses | Multipart field `file`, or raw text/csv; validates/groups and invokes public P3 prediction/rule functions |
 | GET /api/analyses/{id} | Retained analysis; missing/expired IDs return 404 |
 | POST /api/analyses/{id}/insights | JSON `{"event_ids":["id"]}`; bounded grounded Anthropic explanation for saved facts |
+| POST /api/analyses/{id}/report | JSON `{}`; full portfolio briefing, cited priority assessments, advisory actions and hypothetical rule comparisons |
+| GET /api/analyses/{id}/reports/{report_id}.pdf | Exact generated report attachment; never starts another paid generation |
 | GET /api/schema | Machine-readable result schemas plus current request/retention limits |
 | OPTIONS /api/... | Development CORS preflight for allowed origins |
 
@@ -72,6 +75,26 @@ Provider transport follows the official [Messages API](https://platform.claude.c
 ## P3 integration
 
 The backend imports only the public `ml.predict_batch` and `ml.classify_encounter` boundary. P3 can replace its placeholder with the real artifact-backed implementation without changing HTTP endpoints. The batch must return exactly one result per requested event and a real model_version for ready predictions. Invalid IDs, non-probabilities or inconsistent log-risk/probability produce a controlled integration error. Do not edit ML internals from P2 to manufacture readiness.
+
+## Analytical report, what-if comparisons and PDF
+
+The full report is separate from the original short-insight endpoint. Anthropic writes actual narrative statements with fact references: executive summary, key findings, priority-event assessments, eligible advisory actions and an interpretation of the what-if table. Numeric claims are checked against cited values and deterministic supporting values. References and these checks do not prove every free-form interpretation; the result remains advisory.
+
+Whole-portfolio counts cover every encounter. Detailed prose is bounded to ten encounters, ordered critical/elevated/unknown/safe and then source-relative lead time. The response states omitted coverage. Original fixture, model target/status and per-report time semantics remain visible. Unknown predictions are never counted as safe. Successful reports cache for ten minutes; at most 32 exact report versions are retained for one hour. Numeric analysis expiry also invalidates download access.
+
+The what-if comparison independently assumes Pc x 0.1, miss distance x 2, or both, then invokes P3's unchanged classifier. It is a sensitivity analysis, not an orbital simulation or a prediction that a maneuver can produce those changes. Missing or overflowing assumptions become unavailable. The LLM may suggest review/current tracking/flight-dynamics assessment; it cannot issue an exact burn or safety clearance. Pc is an estimate, not an operator control.
+
+P1's requested minimum is one Generate/download report button, with pending/error handling. Existing views and short-insight consumers stay compatible; no new simulation visualization is required. POST the empty JSON object, inspect status/warnings, then link the returned pdf_url. Even an unavailable AI narrative can export the deterministic statistics/scenarios with an explicit label. Give report requests at least 95 seconds before a UI-side timeout; default provider deadline is 60 seconds, bounded at 90. Report and insight network calls share a global two-call limit; there are no automatic retries.
+
+To enable the optional PDF export in a fresh checkout:
+
+```sh
+python3 -m venv backend/.venv
+backend/.venv/bin/python -m pip install -r backend/requirements.txt
+backend/.venv/bin/python backend/server.py --port 8000
+```
+
+The extra is already installed in Ayush's ignored local backend/.venv. Without it, JSON works and download returns actionable PDF_UNAVAILABLE/503. Restart an older server after installing it. PDF includes source labels, counts, narrative/evidence, action rationale, baseline/what-if tables, coverage and limitations. Test doubles never call a live account; PDF-specific tests skip explicitly if the extra is absent.
 
 ## Verification
 

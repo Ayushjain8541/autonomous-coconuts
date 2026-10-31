@@ -13,11 +13,12 @@ class Settings:
     model: str = 'claude-haiku-4-5-20251001'
     timeout: float = 25.0
     cors_origins: tuple = DEFAULT_ORIGINS
+    report_timeout: float = 60.0
 
 
 def load_settings(root=ROOT, environ=None):
     values = {}
-    allowed = {'ANTHROPIC_API_KEY', 'ANTHROPIC_MODEL', 'ANTHROPIC_TIMEOUT_SECONDS', 'COCONUTS_CORS_ORIGINS'}
+    allowed = {'ANTHROPIC_API_KEY', 'ANTHROPIC_MODEL', 'ANTHROPIC_TIMEOUT_SECONDS', 'ANTHROPIC_REPORT_TIMEOUT_SECONDS', 'COCONUTS_CORS_ORIGINS'}
     for name in ['.env', '.env.local']:
         path = Path(root) / name
         if not path.is_file() or path.is_symlink():
@@ -43,7 +44,11 @@ def load_settings(root=ROOT, environ=None):
             raise ValueError()
     except ValueError:
         timeout = 25.0
+    try:
+        report_timeout=float(values.get('ANTHROPIC_REPORT_TIMEOUT_SECONDS','60'))
+        if not 1<=report_timeout<=90:raise ValueError()
+    except ValueError:report_timeout=60.0
     origins = tuple(x.strip() for x in values.get('COCONUTS_CORS_ORIGINS', ','.join(DEFAULT_ORIGINS)).split(',') if x.strip())
     return Settings(api_key=values.get('ANTHROPIC_API_KEY', '').strip(),
                     model=values.get('ANTHROPIC_MODEL', '').strip() or 'claude-haiku-4-5-20251001',
-                    timeout=timeout, cors_origins=origins)
+                    timeout=timeout, cors_origins=origins, report_timeout=report_timeout)

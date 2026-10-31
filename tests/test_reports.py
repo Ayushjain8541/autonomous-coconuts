@@ -2,7 +2,7 @@ import copy
 import unittest
 from backend.analysis import AnalysisService
 from backend.insights import ProviderError
-from backend.reports import ReportService, ReportError
+from backend.reports import ReportService, ReportError, build_context
 
 
 class ReportClient:
@@ -69,6 +69,44 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(cases['combined']['status'],'hypothetical')
         self.assertEqual(self.analysis['encounters'][0]['predicted_pc'],.0002)
         self.assertTrue(result['what_if_summary']['fact_ids'])
+
+    def test_what_if_overflow_is_unavailable_instead_of_nonfinite_json(self):
+        self.analysis['encounters'][0]['miss_distance_m']=1e308
+        context=build_context(self.analysis)
+        scenarios=[x for x in context['what_if_scenarios'] if x['event_id']=='demo-critical-36h' and x['distance_multiplier']==2]
+        self.assertTrue(all(x['status']=='unavailable' for x in scenarios))
+        self.assertTrue(all(x['assumed_miss_distance_m'] is None for x in scenarios))
+
+    def test_policy_window_and_derived_scenario_values_are_supported_evidence(self):
+        def change(result):
+            result['executive_summary']={'text':'There are no critical encounters within 24 hours.', 'fact_ids':['portfolio.critical_within_24h']}
+            result['what_if_summary']={'text':'A 90% lower assumed Pc still leaves the 800 m distance trigger active.',
+                'fact_ids':['scenario.0.pc_lower.resulting_severity']}
+        self.assertEqual(self.service(ReportClient(change)).generate(self.analysis)['status'],'ready')
+
+    def test_captured_live_report_id_capitalization_and_missing_numeric_citation(self):
+        def change(result):
+            result['executive_summary']={'text':'Demo-critical-36h has predicted Pc 0.0002.', 'fact_ids':['event.0.predicted_pc']}
+            result['key_findings'][0]={'text':'The source report count is 3.', 'fact_ids':['portfolio.model_status']}
+        report=self.service(ReportClient(change)).generate(self.analysis)
+        self.assertEqual(report['status'],'ready')
+        self.assertIn('portfolio.source_reports',report['key_findings'][0]['fact_ids'])
+
+    def test_severity_words_do_not_corrupt_other_event_identifiers(self):
+        def change(result):
+            result['what_if_summary']={'text':'Demo-elevated-12h remains elevated across these assumptions.',
+                'fact_ids':['scenario.0.combined.resulting_severity','scenario.1.pc_lower.resulting_severity']}
+        self.assertEqual(self.service(ReportClient(change)).generate(self.analysis)['status'],'ready')
+
+    def test_mixed_threshold_direction_claim_is_replaced_with_labeled_facts(self):
+        def change(result):
+            result['encounters'][2]['assessment']={'text':'Pc and miss distance are both below all thresholds.',
+                'fact_ids':['event.2.predicted_pc','event.2.miss_distance_m']}
+        report=self.service(ReportClient(change)).generate(self.analysis)
+        item=report['priority_events'][2]
+        self.assertEqual(item['assessment_status'],'factual_fallback')
+        self.assertNotIn('both below',item['assessment']['text'])
+        self.assertTrue(any('direction' in w for w in report['warnings']))
 
     def test_bad_references_numbers_cross_event_actions_and_burn_instructions_rejected(self):
         changes = [

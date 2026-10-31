@@ -17,6 +17,8 @@ from backend.analysis import AnalysisService, AnalysisError
 from backend.config import load_settings
 from backend.ingestion import CSVError, MAX_UPLOAD_BYTES
 from backend.insights import InsightsService, InsightRequestError
+from backend.reports import ReportService, ReportError
+from backend.report_pdf import render_pdf, PDFError
 
 ASSETS = {'/': ('index.html', 'text/html; charset=utf-8'),
           '/app.js': ('app.js', 'text/javascript; charset=utf-8'),
@@ -34,13 +36,14 @@ class Handler(BaseHTTPRequestHandler):
         super().setup()
         self.connection.settimeout(30)
 
-    def reply(self, status, data, content_type='application/json; charset=utf-8'):
+    def reply(self, status, data, content_type='application/json; charset=utf-8', download_name=None):
         body = json.dumps(data, allow_nan=False).encode() if isinstance(data, dict) else data
         self.send_response(status)
         self.send_header('Content-Type', content_type)
         self.send_header('Content-Length', str(len(body)))
         self.send_header('Cache-Control', 'no-store')
         self.send_header('X-Content-Type-Options', 'nosniff')
+        if download_name:self.send_header('Content-Disposition','attachment; filename="'+download_name+'"')
         origin = self.headers.get('Origin')
         if origin and origin in self.server.settings_loader().cors_origins:
             self.send_header('Access-Control-Allow-Origin', origin)
@@ -120,15 +123,21 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/schema':
                 return self.reply(200, {'schema_version': '1.0', 'analysis': json.loads((ROOT / 'contracts/analysis-v1.schema.json').read_text()),
                                         'insights': json.loads((ROOT / 'contracts/insights-v1.schema.json').read_text()),
+                                        'report': json.loads((ROOT / 'contracts/report-v1.schema.json').read_text()),
                                         'limits': {'max_upload_bytes': self.server.max_upload_bytes, 'max_reports': 100000,
                                                    'max_insight_events': 10, 'analysis_ttl_seconds': self.server.analysis.ttl_seconds}})
             if path.startswith('/api/analyses/') and len(path.split('/')) == 4:
                 return self.reply(200, self.server.analysis.get(path.split('/')[-1]))
+            parts=path.split('/')
+            if len(parts)==6 and parts[1:3]==['api','analyses'] and parts[4]=='reports' and parts[5].endswith('.pdf'):
+                self.server.analysis.get(parts[3])
+                report=self.server.reports.get(parts[3],parts[5][:-4])
+                return self.reply(200,render_pdf(report),'application/pdf',download_name='encounter-report-'+report['report_id'][:12]+'.pdf')
             if path in ASSETS:
                 name, mime = ASSETS[path]
                 return self.reply(200, (ROOT / 'web' / name).read_bytes(), mime)
             raise RequestError('Route not found.', 'NOT_FOUND', 404)
-        except (RequestError, CSVError, AnalysisError, InsightRequestError) as error:
+        except (RequestError, CSVError, AnalysisError, InsightRequestError, ReportError, PDFError) as error:
             self._error(error)
         except (BrokenPipeError, ConnectionResetError):
             return
@@ -144,6 +153,13 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/analyses':
                 return self.reply(200, self.server.analysis.analyze(self._upload()))
             parts = path.split('/')
+            if len(parts)==5 and parts[1:3]==['api','analyses'] and parts[4]=='report':
+                if self.headers.get_content_type()!='application/json':
+                    raise RequestError('Report requests require application/json.','UNSUPPORTED_SCHEMA',415)
+                try:data=json.loads(self._body(1024))
+                except (ValueError,UnicodeDecodeError):raise RequestError('Send an empty JSON object for report generation.') from None
+                if not isinstance(data,dict) or data:raise RequestError('Send an empty JSON object for report generation.')
+                return self.reply(200,self.server.reports.generate(self.server.analysis.get(parts[3])))
             if len(parts) == 5 and parts[1:3] == ['api', 'analyses'] and parts[4] == 'insights':
                 if self.headers.get_content_type() != 'application/json':
                     raise RequestError('Insights requests require application/json.', 'UNSUPPORTED_SCHEMA', 415)
@@ -158,7 +174,7 @@ class Handler(BaseHTTPRequestHandler):
                 analysis = self.server.analysis.get(parts[3])
                 return self.reply(200, self.server.insights.generate(analysis, data['event_ids']))
             raise RequestError('Route not found.', 'NOT_FOUND', 404)
-        except (RequestError, CSVError, AnalysisError, InsightRequestError) as error:
+        except (RequestError, CSVError, AnalysisError, InsightRequestError, ReportError, PDFError) as error:
             self._error(error)
         except (TimeoutError, OSError):
             self._error(RequestError('Request timed out or the connection was interrupted.', 'INVALID_REQUEST', 408))
@@ -170,10 +186,11 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def make_server(host='127.0.0.1', port=8000, analysis_service=None, insights_service=None,
-                settings_loader=load_settings, max_upload_bytes=MAX_UPLOAD_BYTES):
+                settings_loader=load_settings, max_upload_bytes=MAX_UPLOAD_BYTES, report_service=None):
     server = ThreadingHTTPServer((host, port), Handler)
     server.analysis = analysis_service or AnalysisService()
     server.insights = insights_service or InsightsService()
+    server.reports = report_service or ReportService()
     server.settings_loader, server.max_upload_bytes = settings_loader, max_upload_bytes
     return server
 

@@ -126,3 +126,12 @@ class InsightsTests(unittest.TestCase):
             self.assertNotIn('test-credential',repr(settings))
             p.write_text('ANTHROPIC_API_KEY=changed-locally\n')
             self.assertEqual(load_settings(Path(directory),environ={}).api_key,'changed-locally')
+
+    def test_full_reports_have_a_separate_bounded_timeout(self):
+        with tempfile.TemporaryDirectory() as directory:
+            settings=load_settings(Path(directory),environ={})
+            self.assertEqual(settings.timeout,25)
+            self.assertEqual(settings.report_timeout,60)
+            settings=load_settings(Path(directory),environ={'ANTHROPIC_REPORT_TIMEOUT_SECONDS':'75'})
+            self.assertEqual(settings.report_timeout,75)
+            self.assertEqual(load_settings(Path(directory),environ={'ANTHROPIC_REPORT_TIMEOUT_SECONDS':'inf'}).report_timeout,60)

@@ -38,3 +38,6 @@ development/artifacts/
 /test.csv
 /development/*.csv
 /prediction/*.csv
+# Generated report samples and PDF render checks.
+/output/pdf/
+/tmp/pdfs/

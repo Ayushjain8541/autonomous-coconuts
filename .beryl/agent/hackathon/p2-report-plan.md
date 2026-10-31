@@ -1,6 +1,6 @@
 # Risk briefing and PDF implementation plan
 
-User direction: expand P2 into an analytical portfolio report and supported advisory actions; keep the website concise and offer detailed PDF export. Maneuver simulation is a separate P3 proposal while the user chooses illustrative versus operational inputs. Existing v1 analysis/insights stay compatible; do not edit web/, ml/, development/ or prediction/ implementations.
+User direction: expand P2 into an analytical portfolio report and supported advisory actions; keep the website concise and offer detailed PDF export. User clarified what-if belongs in the report: independently assumed Pc/miss-distance sensitivity through existing P3 rules; no new visualization, physics simulator or P3 model change is needed for this extension. Existing v1 analysis/insights stay compatible; do not edit web/, ml/, development/ or prediction/ implementations.
 
 Execution: Superpowers inline under the existing user opt-out of repeated approval interviews. Existing isolated role worktree, Python 3.9+, Anthropic access already verified. Main's P3 workflow was merged without changing its row-risk target or claiming adapter compatibility.
 

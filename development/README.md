@@ -35,9 +35,28 @@ this folder's `artifacts/` output directory. There is one shared copy of the tes
 CSV. All three forbidden test fields are dropped before prediction.
 
 The model predicts per-row `risk = log10(Pc)` using exactly the requested 12 source
-features. Fit, early-stopping, and holdout partitions use disjoint event IDs.
-The notebook reports regression errors and probability-only risk-threshold
-performance independently of distance-based tier overrides.
+features. Fit, validation, and holdout partitions use disjoint event IDs.
+Frequency-adaptive sample weights make rare high-risk errors expensive. Weights
+are computed from fitting labels only and normalized to mean one. Validation
+selects among nine weighted candidates and the unweighted baseline by worst-band
+recall plus a small macro-recall term; candidates must also beat a fit-mean
+constant's validation RMSE. The holdout/test labels never select the costs.
+
+The notebook reports probability-band recall/precision separately from the
+distance-based operational tiers, with the unweighted baseline and numerical
+error tradeoffs. It refits using `evaluation["selected_config"]` and the selected
+round count, recomputing frequency weights on all training rows. The current
+selection uses balance power 1, Elevated multiplier 20, Critical multiplier 320,
+and 125 rounds. Reproduce the original baseline separately with:
+
+```bash
+development/.venv/bin/python development/collision_risk.py --unweighted --output-dir development/artifacts/unweighted
+```
+
+The committed aggregate run is [reports/cost_sensitive_evaluation.json](reports/cost_sensitive_evaluation.json).
+Cost-sensitive risk estimates prioritize sensitivity and are not calibrated
+collision probabilities. See the root README for increased recall, false alerts,
+and regression error; equal probability-band recall is not guaranteed.
 
 ## Benchmark an existing prediction export
 

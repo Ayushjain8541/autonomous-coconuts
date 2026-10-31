@@ -29,6 +29,15 @@ The output preserves all input rows and telemetry, replaces `risk` with predicte
 Input `risk`, `max_risk_estimate`, and `max_risk_scaling` are dropped before
 prediction; the source CSV is never overwritten.
 
+The deployed model now uses class-frequency weighting during training to improve
+rare Critical detection. Uploads use the saved model directly; no labels,
+retraining, new dependencies, or inference-time weights are needed. Risk thresholds
+and output columns are unchanged. This sensitivity-focused model produces more
+false alerts and higher regression RMSE than the earlier model; its numerical
+outputs must not be described as calibrated collision probabilities. See the
+[training and benchmark evidence](../README.md#ml-training-and-benchmark-evidence)
+for measured recall, class balance, and tradeoffs.
+
 ## Uploaded CSV helper
 
 CSV uploads can omit all three risk-related input columns. Backend code can

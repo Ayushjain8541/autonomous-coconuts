@@ -84,6 +84,10 @@ def benchmark_frames(reference, predictions, *, distance_unit="m"):
     confusion = [[int(np.sum((truth == first) & (exported == second)))
                   for second in CLASSES] for first in CLASSES]
     majority = max(CLASSES, key=lambda label: int(np.sum(truth == label)))
+    actual_bands = np.digitize(actual, [-6.0, -4.0])
+    predicted_bands = np.digitize(predicted, [-6.0, -4.0])
+    band_metrics = {label: _binary_metrics(actual_bands == i, predicted_bands == i)
+                    for i, label in enumerate(CLASSES)}
     return {
         "target": "same-row reported risk = log10(Pc), not final-TCA risk",
         "distance_unit": distance_unit, "rows": len(reference),
@@ -112,6 +116,12 @@ def benchmark_frames(reference, predictions, *, distance_unit="m"):
         "probability_only": {
             f"risk_ge_{threshold:g}": _binary_metrics(actual >= threshold, predicted >= threshold)
             for threshold in (-6.0, -4.0)
+        },
+        "probability_bands": {
+            "class_metrics": band_metrics,
+            "macro_recall": float(np.mean([m["recall"] for m in band_metrics.values()])),
+            "confusion_matrix": [[int(np.sum((actual_bands == i) & (predicted_bands == j)))
+                                  for j in range(3)] for i in range(3)],
         },
     }
 

@@ -1,0 +1,1404 @@
+{
+  "protocol": "Training-only cost search; event-separated holdout; retrospective supplied-test comparison after export. Test labels were previously inspected for baseline benchmarking, so this is not a new blind test.",
+  "training": {
+    "target": "risk = log10(Pc), per telemetry row",
+    "distance_unit": "m",
+    "source_features": [
+      "event_id",
+      "time_to_tca",
+      "miss_distance",
+      "relative_speed",
+      "relative_position_r",
+      "relative_position_t",
+      "relative_position_n",
+      "c_object_type",
+      "c_sigma_r",
+      "t_sigma_r",
+      "F10",
+      "AP"
+    ],
+    "config": {
+      "random_state": 42,
+      "holdout_fraction": 0.2,
+      "validation_fraction": 0.2,
+      "max_estimators": 1600,
+      "early_stopping_rounds": 80,
+      "learning_rate": 0.04,
+      "max_depth": 7,
+      "n_jobs": 8,
+      "distance_unit": "m",
+      "class_balance_power": 1.0,
+      "elevated_weight": 20.0,
+      "critical_weight": 320.0
+    },
+    "selected_boosting_rounds": 125,
+    "holdout_xgboost": {
+      "rmse_log10_pc": 9.575038144027367,
+      "mae_log10_pc": 6.919472484939831,
+      "r2": 0.0846558542114969
+    },
+    "holdout_mean_baseline": {
+      "rmse_log10_pc": 10.008402305240123,
+      "mae_log10_pc": 9.485998307078496,
+      "r2": -7.57379690472515e-05
+    },
+    "weight_selection": {
+      "protocol": "fit/validation event partitions only; probability bands ignore distance",
+      "criterion": "minimize 1 - (worst recall + 0.05 * macro recall) / 1.05",
+      "rmse_guard_constant_mean": 10.071892806544392,
+      "tuned": true,
+      "selected": {
+        "class_balance_power": 1.0,
+        "elevated_weight": 20.0,
+        "critical_weight": 320.0,
+        "fit_class_counts": [
+          97897,
+          5908,
+          425
+        ],
+        "fit_class_costs": [
+          0.003122259354698518,
+          1.0347319703687232,
+          230.14386751768157
+        ],
+        "rounds": 125,
+        "validation_probability_bands": {
+          "report": {
+            "Safe": {
+              "precision": 0.9850434452305209,
+              "recall": 0.8451541939951929,
+              "f1-score": 0.9097526749693037,
+              "support": 24547.0
+            },
+            "Elevated risk": {
+              "precision": 0.23475867908552076,
+              "recall": 0.6656662665066027,
+              "f1-score": 0.34710485133020347,
+              "support": 1666.0
+            },
+            "Critical (Maneuver Required)": {
+              "precision": 0.17728055077452667,
+              "recall": 0.673202614379085,
+              "f1-score": 0.28065395095367845,
+              "support": 153.0
+            },
+            "accuracy": 0.8328149890009862,
+            "macro avg": {
+              "precision": 0.4656942250301895,
+              "recall": 0.7280076916269603,
+              "f1-score": 0.5125038257510619,
+              "support": 26366.0
+            },
+            "weighted avg": {
+              "precision": 0.9329474828832048,
+              "recall": 0.8328149890009862,
+              "f1-score": 0.8705497856816934,
+              "support": 26366.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              20746,
+              3567,
+              234
+            ],
+            [
+              313,
+              1109,
+              244
+            ],
+            [
+              2,
+              48,
+              103
+            ]
+          ],
+          "macro_recall": 0.7280076916269603,
+          "worst_recall": 0.6656662665066027,
+          "recall_gap": 0.17948792748859022,
+          "balanced_band_error": 0.3313650942019518
+        },
+        "validation_rmse_log10_pc": 9.809211529482871,
+        "eligible": true
+      },
+      "trials": [
+        {
+          "class_balance_power": 0,
+          "elevated_weight": 1,
+          "critical_weight": 1,
+          "fit_class_counts": [
+            97897,
+            5908,
+            425
+          ],
+          "fit_class_costs": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "rounds": 356,
+          "validation_probability_bands": {
+            "report": {
+              "Safe": {
+                "precision": 0.9434613892122623,
+                "recall": 0.9904672668757893,
+                "f1-score": 0.9663930679492021,
+                "support": 24547.0
+              },
+              "Elevated risk": {
+                "precision": 0.4866920152091255,
+                "recall": 0.15366146458583432,
+                "f1-score": 0.23357664233576642,
+                "support": 1666.0
+              },
+              "Critical (Maneuver Required)": {
+                "precision": 0.18571428571428572,
+                "recall": 0.08496732026143791,
+                "f1-score": 0.11659192825112108,
+                "support": 153.0
+              },
+              "accuracy": 0.9323371008116513,
+              "macro avg": {
+                "precision": 0.5386225633785579,
+                "recall": 0.4096986839076872,
+                "f1-score": 0.4388538795120298,
+                "support": 26366.0
+              },
+              "weighted avg": {
+                "precision": 0.9102021506503107,
+                "recall": 0.9323371008116513,
+                "f1-score": 0.9151569403816611,
+                "support": 26366.0
+              }
+            },
+            "confusion_matrix": [
+              [
+                24313,
+                220,
+                14
+              ],
+              [
+                1367,
+                256,
+                43
+              ],
+              [
+                90,
+                50,
+                13
+              ]
+            ],
+            "macro_recall": 0.4096986839076872,
+            "worst_recall": 0.08496732026143791,
+            "recall_gap": 0.9054999466143514,
+            "balanced_band_error": 0.8995692814696931
+          },
+          "validation_rmse_log10_pc": 5.84358926764091,
+          "eligible": true
+        },
+        {
+          "class_balance_power": 1.0,
+          "elevated_weight": 20.0,
+          "critical_weight": 320.0,
+          "fit_class_counts": [
+            97897,
+            5908,
+            425
+          ],
+          "fit_class_costs": [
+            0.003122259354698518,
+            1.0347319703687232,
+            230.14386751768157
+          ],
+          "rounds": 125,
+          "validation_probability_bands": {
+            "report": {
+              "Safe": {
+                "precision": 0.9850434452305209,
+                "recall": 0.8451541939951929,
+                "f1-score": 0.9097526749693037,
+                "support": 24547.0
+              },
+              "Elevated risk": {
+                "precision": 0.23475867908552076,
+                "recall": 0.6656662665066027,
+                "f1-score": 0.34710485133020347,
+                "support": 1666.0
+              },
+              "Critical (Maneuver Required)": {
+                "precision": 0.17728055077452667,
+                "recall": 0.673202614379085,
+                "f1-score": 0.28065395095367845,
+                "support": 153.0
+              },
+              "accuracy": 0.8328149890009862,
+              "macro avg": {
+                "precision": 0.4656942250301895,
+                "recall": 0.7280076916269603,
+                "f1-score": 0.5125038257510619,
+                "support": 26366.0
+              },
+              "weighted avg": {
+                "precision": 0.9329474828832048,
+                "recall": 0.8328149890009862,
+                "f1-score": 0.8705497856816934,
+                "support": 26366.0
+              }
+            },
+            "confusion_matrix": [
+              [
+                20746,
+                3567,
+                234
+              ],
+              [
+                313,
+                1109,
+                244
+              ],
+              [
+                2,
+                48,
+                103
+              ]
+            ],
+            "macro_recall": 0.7280076916269603,
+            "worst_recall": 0.6656662665066027,
+            "recall_gap": 0.17948792748859022,
+            "balanced_band_error": 0.3313650942019518
+          },
+          "validation_rmse_log10_pc": 9.809211529482871,
+          "eligible": true
+        },
+        {
+          "class_balance_power": 1,
+          "elevated_weight": 5,
+          "critical_weight": 5,
+          "fit_class_counts": [
+            97897,
+            5908,
+            425
+          ],
+          "fit_class_costs": [
+            0.09679003999565407,
+            8.019172770357606,
+            111.47593582887703
+          ],
+          "rounds": 82,
+          "validation_probability_bands": {
+            "report": {
+              "Safe": {
+                "precision": 0.9755380758924712,
+                "recall": 0.9195421029046319,
+                "f1-score": 0.946712802768166,
+                "support": 24547.0
+              },
+              "Elevated risk": {
+                "precision": 0.34411384217335056,
+                "recall": 0.6386554621848739,
+                "f1-score": 0.44724674232870953,
+                "support": 1666.0
+              },
+              "Critical (Maneuver Required)": {
+                "precision": 0.29411764705882354,
+                "recall": 0.26143790849673204,
+                "f1-score": 0.2768166089965398,
+                "support": 153.0
+              },
+              "accuracy": 0.8979746643404385,
+              "macro avg": {
+                "precision": 0.5379231883748817,
+                "recall": 0.6065451578620792,
+                "f1-score": 0.5569253846978052,
+                "support": 26366.0
+              },
+              "weighted avg": {
+                "precision": 0.9316857623451905,
+                "recall": 0.8979746643404385,
+                "f1-score": 0.9112654624685684,
+                "support": 26366.0
+              }
+            },
+            "confusion_matrix": [
+              [
+                22572,
+                1920,
+                55
+              ],
+              [
+                561,
+                1064,
+                41
+              ],
+              [
+                5,
+                108,
+                40
+              ]
+            ],
+            "macro_recall": 0.6065451578620792,
+            "worst_recall": 0.26143790849673204,
+            "recall_gap": 0.6581041944078998,
+            "balanced_band_error": 0.7221284129620609
+          },
+          "validation_rmse_log10_pc": 7.312390743386985,
+          "eligible": true
+        },
+        {
+          "class_balance_power": 1,
+          "elevated_weight": 5,
+          "critical_weight": 20,
+          "fit_class_counts": [
+            97897,
+            5908,
+            425
+          ],
+          "fit_class_costs": [
+            0.04094963230585364,
+            3.3927269413051406,
+            188.65158371040727
+          ],
+          "rounds": 40,
+          "validation_probability_bands": {
+            "report": {
+              "Safe": {
+                "precision": 0.9816752730430014,
+                "recall": 0.8751374913431377,
+                "f1-score": 0.9253499892311006,
+                "support": 24547.0
+              },
+              "Elevated risk": {
+                "precision": 0.2660098522167488,
+                "recall": 0.6158463385354142,
+                "f1-score": 0.37153720803910917,
+                "support": 1666.0
+              },
+              "Critical (Maneuver Required)": {
+                "precision": 0.1501597444089457,
+                "recall": 0.6143790849673203,
+                "f1-score": 0.24133504492939667,
+                "support": 153.0
+              },
+              "accuracy": 0.8572403853447622,
+              "macro avg": {
+                "precision": 0.4659482898895653,
+                "recall": 0.7017876382819574,
+                "f1-score": 0.5127407473998689,
+                "support": 26366.0
+              },
+              "weighted avg": {
+                "precision": 0.9316289836180774,
+                "recall": 0.8572403853447622,
+                "f1-score": 0.8863866887705067,
+                "support": 26366.0
+              }
+            },
+            "confusion_matrix": [
+              [
+                21482,
+                2774,
+                291
+              ],
+              [
+                399,
+                1026,
+                241
+              ],
+              [
+                2,
+                57,
+                94
+              ]
+            ],
+            "macro_recall": 0.7017876382819574,
+            "worst_recall": 0.6143790849673203,
+            "recall_gap": 0.2607584063758174,
+            "balanced_band_error": 0.38145860297007805
+          },
+          "validation_rmse_log10_pc": 9.313268161964174,
+          "eligible": true
+        },
+        {
+          "class_balance_power": 1,
+          "elevated_weight": 5,
+          "critical_weight": 80,
+          "fit_class_counts": [
+            97897,
+            5908,
+            425
+          ],
+          "fit_class_costs": [
+            0.012380121394792961,
+            1.0257081450457404,
+            228.13679890560877
+          ],
+          "rounds": 30,
+          "validation_probability_bands": {
+            "report": {
+              "Safe": {
+                "precision": 0.98640099626401,
+                "recall": 0.8066973560923942,
+                "f1-score": 0.887544260678589,
+                "support": 24547.0
+              },
+              "Elevated risk": {
+                "precision": 0.1856115107913669,
+                "recall": 0.542016806722689,
+                "f1-score": 0.2765273311897106,
+                "support": 1666.0
+              },
+              "Critical (Maneuver Required)": {
+                "precision": 0.09747545582047686,
+                "recall": 0.9084967320261438,
+                "f1-score": 0.17606079797340088,
+                "support": 153.0
+              },
+              "accuracy": 0.7905636046423424,
+              "macro avg": {
+                "precision": 0.42316265429195127,
+                "recall": 0.7524036316137424,
+                "f1-score": 0.4467107966139001,
+                "support": 26366.0
+              },
+              "weighted avg": {
+                "precision": 0.930642789084867,
+                "recall": 0.7905636046423424,
+                "f1-score": 0.844806978788186,
+                "support": 26366.0
+              }
+            },
+            "confusion_matrix": [
+              [
+                19802,
+                3949,
+                796
+              ],
+              [
+                272,
+                903,
+                491
+              ],
+              [
+                1,
+                13,
+                139
+              ]
+            ],
+            "macro_recall": 0.7524036316137424,
+            "worst_recall": 0.542016806722689,
+            "recall_gap": 0.36647992530345475,
+            "balanced_band_error": 0.44796477304440363
+          },
+          "validation_rmse_log10_pc": 11.53469406054125,
+          "eligible": false
+        },
+        {
+          "class_balance_power": 1,
+          "elevated_weight": 20,
+          "critical_weight": 20,
+          "fit_class_counts": [
+            97897,
+            5908,
+            425
+          ],
+          "fit_class_costs": [
+            0.025968059511029134,
+            8.605941509652062,
+            119.63271162123385
+          ],
+          "rounds": 70,
+          "validation_probability_bands": {
+            "report": {
+              "Safe": {
+                "precision": 0.9853249475890985,
+                "recall": 0.8424654743960566,
+                "f1-score": 0.9083122872515648,
+                "support": 24547.0
+              },
+              "Elevated risk": {
+                "precision": 0.25181922635005743,
+                "recall": 0.7893157262905162,
+                "f1-score": 0.3818234610917538,
+                "support": 1666.0
+              },
+              "Critical (Maneuver Required)": {
+                "precision": 0.23076923076923078,
+                "recall": 0.23529411764705882,
+                "f1-score": 0.23300970873786409,
+                "support": 153.0
+              },
+              "accuracy": 0.8355837062884017,
+              "macro avg": {
+                "precision": 0.48930446823612894,
+                "recall": 0.6223584394445439,
+                "f1-score": 0.5077151523603942,
+                "support": 26366.0
+              },
+              "weighted avg": {
+                "precision": 0.9345979675292607,
+                "recall": 0.8355837062884017,
+                "f1-score": 0.8711260747470194,
+                "support": 26366.0
+              }
+            },
+            "confusion_matrix": [
+              [
+                20680,
+                3792,
+                75
+              ],
+              [
+                306,
+                1315,
+                45
+              ],
+              [
+                2,
+                115,
+                36
+              ]
+            ],
+            "macro_recall": 0.6223584394445439,
+            "worst_recall": 0.23529411764705882,
+            "recall_gap": 0.6071713567489978,
+            "balanced_band_error": 0.7462742479816324
+          },
+          "validation_rmse_log10_pc": 8.806118072255478,
+          "eligible": true
+        },
+        {
+          "class_balance_power": 1,
+          "elevated_weight": 20,
+          "critical_weight": 80,
+          "fit_class_counts": [
+            97897,
+            5908,
+            425
+          ],
+          "fit_class_costs": [
+            0.010541489504477175,
+            3.4935010088686598,
+            194.2550960978451
+          ],
+          "rounds": 34,
+          "validation_probability_bands": {
+            "report": {
+              "Safe": {
+                "precision": 0.9913516453630677,
+                "recall": 0.7424939911190777,
+                "f1-score": 0.849063635516631,
+                "support": 24547.0
+              },
+              "Elevated risk": {
+                "precision": 0.1743170156705034,
+                "recall": 0.7545018007202882,
+                "f1-score": 0.28320378506252114,
+                "support": 1666.0
+              },
+              "Critical (Maneuver Required)": {
+                "precision": 0.13246753246753246,
+                "recall": 0.6666666666666666,
+                "f1-score": 0.2210184182015168,
+                "support": 153.0
+              },
+              "accuracy": 0.7428127133429416,
+              "macro avg": {
+                "precision": 0.43271206450036787,
+                "recall": 0.7212208195020108,
+                "f1-score": 0.45109527959355633,
+                "support": 26366.0
+              },
+              "weighted avg": {
+                "precision": 0.934741277376235,
+                "recall": 0.7428127133429416,
+                "f1-score": 0.809663899906157,
+                "support": 26366.0
+              }
+            },
+            "confusion_matrix": [
+              [
+                18226,
+                5903,
+                418
+              ],
+              [
+                159,
+                1257,
+                250
+              ],
+              [
+                0,
+                51,
+                102
+              ]
+            ],
+            "macro_recall": 0.7212208195020108,
+            "worst_recall": 0.6666666666666666,
+            "recall_gap": 0.08783513405362153,
+            "balanced_band_error": 0.33073551653165034
+          },
+          "validation_rmse_log10_pc": 11.725705400068872,
+          "eligible": false
+        },
+        {
+          "class_balance_power": 1,
+          "elevated_weight": 80,
+          "critical_weight": 80,
+          "fit_class_counts": [
+            97897,
+            5908,
+            425
+          ],
+          "fit_class_costs": [
+            0.006612984099081953,
+            8.766300668217008,
+            121.8618925831202
+          ],
+          "rounds": 44,
+          "validation_probability_bands": {
+            "report": {
+              "Safe": {
+                "precision": 0.9936993699369937,
+                "recall": 0.6746241903287571,
+                "f1-score": 0.8036494224983015,
+                "support": 24547.0
+              },
+              "Elevated risk": {
+                "precision": 0.15765527457411915,
+                "recall": 0.8943577430972389,
+                "f1-score": 0.26805792929747235,
+                "support": 1666.0
+              },
+              "Critical (Maneuver Required)": {
+                "precision": 0.124,
+                "recall": 0.20261437908496732,
+                "f1-score": 0.15384615384615385,
+                "support": 153.0
+              },
+              "accuracy": 0.6857695516953652,
+              "macro avg": {
+                "precision": 0.42511821483703766,
+                "recall": 0.5905321041703211,
+                "f1-score": 0.40851783521397583,
+                "support": 26366.0
+              },
+              "weighted avg": {
+                "precision": 0.9358250823516601,
+                "recall": 0.6857695516953652,
+                "f1-score": 0.7660360064406379,
+                "support": 26366.0
+              }
+            },
+            "confusion_matrix": [
+              [
+                16560,
+                7840,
+                147
+              ],
+              [
+                104,
+                1490,
+                72
+              ],
+              [
+                1,
+                121,
+                31
+              ]
+            ],
+            "macro_recall": 0.5905321041703211,
+            "worst_recall": 0.20261437908496732,
+            "recall_gap": 0.6917433640122717,
+            "balanced_band_error": 0.7789133482919206
+          },
+          "validation_rmse_log10_pc": 11.918120505286115,
+          "eligible": false
+        },
+        {
+          "class_balance_power": 1,
+          "elevated_weight": 80,
+          "critical_weight": 320,
+          "fit_class_counts": [
+            97897,
+            5908,
+            425
+          ],
+          "fit_class_costs": [
+            0.002655088378933154,
+            3.519636926640745,
+            195.70837611852724
+          ],
+          "rounds": 36,
+          "validation_probability_bands": {
+            "report": {
+              "Safe": {
+                "precision": 0.9965330444203684,
+                "recall": 0.5620646107467308,
+                "f1-score": 0.7187434882267139,
+                "support": 24547.0
+              },
+              "Elevated risk": {
+                "precision": 0.1185381718589524,
+                "recall": 0.8313325330132053,
+                "f1-score": 0.20749063670411985,
+                "support": 1666.0
+              },
+              "Critical (Maneuver Required)": {
+                "precision": 0.1063321385902031,
+                "recall": 0.5816993464052288,
+                "f1-score": 0.1797979797979798,
+                "support": 153.0
+              },
+              "accuracy": 0.5791928999469013,
+              "macro avg": {
+                "precision": 0.4071344516231747,
+                "recall": 0.6583654967217217,
+                "f1-score": 0.36867736824293784,
+                "support": 26366.0
+              },
+              "weighted avg": {
+                "precision": 0.9358890257493779,
+                "recall": 0.5791928999469013,
+                "f1-score": 0.6833112681923423,
+                "support": 26366.0
+              }
+            },
+            "confusion_matrix": [
+              [
+                13797,
+                10236,
+                514
+              ],
+              [
+                47,
+                1385,
+                234
+              ],
+              [
+                1,
+                63,
+                89
+              ]
+            ],
+            "macro_recall": 0.6583654967217217,
+            "worst_recall": 0.5620646107467308,
+            "recall_gap": 0.26926792226647456,
+            "balanced_band_error": 0.43334963277826966
+          },
+          "validation_rmse_log10_pc": 13.909460477312088,
+          "eligible": false
+        },
+        {
+          "class_balance_power": 1,
+          "elevated_weight": 80,
+          "critical_weight": 1280,
+          "fit_class_counts": [
+            97897,
+            5908,
+            425
+          ],
+          "fit_class_costs": [
+            0.0007822854077532657,
+            1.0370127902887132,
+            230.65116480096816
+          ],
+          "rounds": 102,
+          "validation_probability_bands": {
+            "report": {
+              "Safe": {
+                "precision": 0.9932726082038459,
+                "recall": 0.6796757241210739,
+                "f1-score": 0.8070820433436533,
+                "support": 24547.0
+              },
+              "Elevated risk": {
+                "precision": 0.14974874371859295,
+                "recall": 0.804921968787515,
+                "f1-score": 0.2525185952358535,
+                "support": 1666.0
+              },
+              "Critical (Maneuver Required)": {
+                "precision": 0.16123778501628663,
+                "recall": 0.6470588235294118,
+                "f1-score": 0.258148631029987,
+                "support": 153.0
+              },
+              "accuracy": 0.6874004399605552,
+              "macro avg": {
+                "precision": 0.43475304564624184,
+                "recall": 0.7105521721460003,
+                "f1-score": 0.4392497565364979,
+                "support": 26366.0
+              },
+              "weighted avg": {
+                "precision": 0.9351442578215304,
+                "recall": 0.6874004399605552,
+                "f1-score": 0.7688551785696418,
+                "support": 26366.0
+              }
+            },
+            "confusion_matrix": [
+              [
+                16684,
+                7560,
+                303
+              ],
+              [
+                113,
+                1341,
+                212
+              ],
+              [
+                0,
+                54,
+                99
+              ]
+            ],
+            "macro_recall": 0.7105521721460003,
+            "worst_recall": 0.6470588235294118,
+            "recall_gap": 0.1578631452581032,
+            "balanced_band_error": 0.3499176836793222
+          },
+          "validation_rmse_log10_pc": 12.972299512471299,
+          "eligible": false
+        }
+      ]
+    },
+    "selected_config": {
+      "random_state": 42,
+      "holdout_fraction": 0.2,
+      "validation_fraction": 0.2,
+      "max_estimators": 1600,
+      "early_stopping_rounds": 80,
+      "learning_rate": 0.04,
+      "max_depth": 7,
+      "n_jobs": 8,
+      "distance_unit": "m",
+      "class_balance_power": 1.0,
+      "elevated_weight": 20.0,
+      "critical_weight": 320.0
+    },
+    "holdout_probability_bands": {
+      "report": {
+        "Safe": {
+          "precision": 0.985881188872398,
+          "recall": 0.8633318892258472,
+          "f1-score": 0.9205458034254851,
+          "support": 30007.0
+        },
+        "Elevated risk": {
+          "precision": 0.23783679007559605,
+          "recall": 0.6481774960380349,
+          "f1-score": 0.3479863868406126,
+          "support": 1893.0
+        },
+        "Critical (Maneuver Required)": {
+          "precision": 0.1378737541528239,
+          "recall": 0.6014492753623188,
+          "f1-score": 0.22432432432432434,
+          "support": 138.0
+        },
+        "accuracy": 0.8494912291653661,
+        "macro avg": {
+          "precision": 0.45386391103360596,
+          "recall": 0.7043195535420669,
+          "f1-score": 0.49761883819680736,
+          "support": 32038.0
+        },
+        "weighted avg": {
+          "precision": 0.9380294792490244,
+          "recall": 0.8494912291653661,
+          "f1-score": 0.8837166149708024,
+          "support": 32038.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          25906,
+          3880,
+          221
+        ],
+        [
+          368,
+          1227,
+          298
+        ],
+        [
+          3,
+          52,
+          83
+        ]
+      ],
+      "macro_recall": 0.7043195535420669,
+      "worst_recall": 0.6014492753623188,
+      "recall_gap": 0.2618826138635284,
+      "balanced_band_error": 0.39365213996245507
+    },
+    "holdout_unweighted_xgboost": {
+      "rmse_log10_pc": 5.723389118184742,
+      "mae_log10_pc": 4.028132946502884,
+      "r2": 0.672953180724909,
+      "probability_bands": {
+        "report": {
+          "Safe": {
+            "precision": 0.9470806979626863,
+            "recall": 0.993034958509681,
+            "f1-score": 0.9695135838620466,
+            "support": 30007.0
+          },
+          "Elevated risk": {
+            "precision": 0.5533980582524272,
+            "recall": 0.15055467511885895,
+            "f1-score": 0.2367109634551495,
+            "support": 1893.0
+          },
+          "Critical (Maneuver Required)": {
+            "precision": 0.08333333333333333,
+            "recall": 0.036231884057971016,
+            "f1-score": 0.050505050505050504,
+            "support": 138.0
+          },
+          "accuracy": 0.939134777451776,
+          "macro avg": {
+            "precision": 0.5279373631828156,
+            "recall": 0.393273839228837,
+            "f1-score": 0.41890986594074886,
+            "support": 32038.0
+          },
+          "weighted avg": {
+            "precision": 0.9200990395167667,
+            "recall": 0.939134777451776,
+            "f1-score": 0.922256622190484,
+            "support": 32038.0
+          }
+        },
+        "confusion_matrix": [
+          [
+            29798,
+            199,
+            10
+          ],
+          [
+            1563,
+            285,
+            45
+          ],
+          [
+            102,
+            31,
+            5
+          ]
+        ],
+        "macro_recall": 0.393273839228837,
+        "worst_recall": 0.036231884057971016,
+        "recall_gap": 0.95680307445171,
+        "balanced_band_error": 0.9467661180767497
+      }
+    },
+    "partitions": {
+      "fit": {
+        "rows": 104230,
+        "events": 8418
+      },
+      "validation": {
+        "rows": 26366,
+        "events": 2105
+      },
+      "holdout": {
+        "rows": 32038,
+        "events": 2631
+      }
+    },
+    "tier_report": {
+      "Safe": {
+        "precision": 0.9871149776628262,
+        "recall": 0.9132080396763247,
+        "f1-score": 0.9487243226141782,
+        "support": 22986.0
+      },
+      "Elevated risk": {
+        "precision": 0.7514822134387352,
+        "recall": 0.9227969058091916,
+        "f1-score": 0.8283749744706923,
+        "support": 6593.0
+      },
+      "Critical (Maneuver Required)": {
+        "precision": 0.9107209562943593,
+        "recall": 0.9914599430662872,
+        "f1-score": 0.9493769470404985,
+        "support": 2459.0
+      },
+      "accuracy": 0.92118734003371,
+      "macro avg": {
+        "precision": 0.8831060491319737,
+        "recall": 0.9424882961839346,
+        "f1-score": 0.9088254147084562,
+        "support": 32038.0
+      },
+      "weighted avg": {
+        "precision": 0.93276140649501,
+        "recall": 0.92118734003371,
+        "f1-score": 0.9240080966061353,
+        "support": 32038.0
+      }
+    },
+    "tier_confusion_matrix": [
+      [
+        20991,
+        1992,
+        3
+      ],
+      [
+        273,
+        6084,
+        236
+      ],
+      [
+        1,
+        20,
+        2438
+      ]
+    ],
+    "probability_only_risk_ge_-6": {
+      "precision": 0.2881444193716369,
+      "recall": 0.8173313638601674,
+      "f1": 0.4260780287474333,
+      "actual_positive_rows": 2031,
+      "predicted_positive_rows": 5761
+    },
+    "probability_only_risk_ge_-4": {
+      "precision": 0.1378737541528239,
+      "recall": 0.6014492753623188,
+      "f1": 0.22432432432432434,
+      "actual_positive_rows": 138,
+      "predicted_positive_rows": 602
+    },
+    "holdout_time_to_tca_gt_2_days": {
+      "rows": 21944,
+      "rmse_log10_pc": 9.221693946135202,
+      "mae_log10_pc": 6.502195225227913,
+      "r2": 0.06829146155199128
+    }
+  },
+  "final_refit": {
+    "probability_band_counts": [
+      152451,
+      9467,
+      716
+    ],
+    "probability_band_costs": [
+      0.0031284317670572715,
+      1.0075685038970066,
+      213.15421288028963
+    ]
+  },
+  "supplied_test": {
+    "target": "same-row reported risk = log10(Pc), not final-TCA risk",
+    "distance_unit": "m",
+    "rows": 24484,
+    "events": 2167,
+    "tier_correct_rows": 21514,
+    "tier_accuracy": 0.8786962914556445,
+    "latest_report_per_event": {
+      "rows": 2167,
+      "correct_rows": 2070,
+      "accuracy": 0.95523765574527
+    },
+    "regression": {
+      "rmse_log10_pc": 9.460227196176104,
+      "mae_log10_pc": 6.519833222280166,
+      "r2": 0.07694331434154111,
+      "within_one_log10_unit_rows": 5330,
+      "within_one_log10_unit_rate": 0.21769318738768176
+    },
+    "class_metrics": {
+      "Safe": {
+        "support": 15756,
+        "true_positives": 13457,
+        "false_positives": 297,
+        "false_negatives": 2299,
+        "precision": 0.9784062818089283,
+        "recall": 0.8540873318101041,
+        "f1": 0.9120298203998645
+      },
+      "Elevated risk": {
+        "support": 6501,
+        "true_positives": 5888,
+        "false_positives": 2357,
+        "false_negatives": 613,
+        "precision": 0.7141297756215889,
+        "recall": 0.905706814336256,
+        "f1": 0.7985894479858945
+      },
+      "Critical": {
+        "support": 2227,
+        "true_positives": 2169,
+        "false_positives": 316,
+        "false_negatives": 58,
+        "precision": 0.8728370221327968,
+        "recall": 0.9739559946115851,
+        "f1": 0.9206281833616299
+      }
+    },
+    "confusion_matrix_labels": [
+      "Safe",
+      "Elevated risk",
+      "Critical"
+    ],
+    "confusion_matrix": [
+      [
+        13457,
+        2299,
+        0
+      ],
+      [
+        297,
+        5888,
+        316
+      ],
+      [
+        0,
+        58,
+        2169
+      ]
+    ],
+    "baselines": {
+      "distance_only": {
+        "correct_rows": 23368,
+        "accuracy": 0.9544192125469695
+      },
+      "majority_class": {
+        "class": "Safe",
+        "accuracy": 0.6435223002777324
+      }
+    },
+    "probability_only": {
+      "risk_ge_-6": {
+        "support": 3263,
+        "true_positives": 2891,
+        "false_positives": 4364,
+        "false_negatives": 372,
+        "precision": 0.39848380427291524,
+        "recall": 0.8859944836040453,
+        "f1": 0.5497242821829245
+      },
+      "risk_ge_-4": {
+        "support": 233,
+        "true_positives": 125,
+        "false_positives": 518,
+        "false_negatives": 108,
+        "precision": 0.19440124416796267,
+        "recall": 0.5364806866952789,
+        "f1": 0.2853881278538813
+      }
+    },
+    "probability_bands": {
+      "class_metrics": {
+        "Safe": {
+          "support": 21221,
+          "true_positives": 16857,
+          "false_positives": 372,
+          "false_negatives": 4364,
+          "precision": 0.9784084973010622,
+          "recall": 0.7943546486970454,
+          "f1": 0.8768270481144343
+        },
+        "Elevated risk": {
+          "support": 3030,
+          "true_positives": 2271,
+          "false_positives": 4341,
+          "false_negatives": 759,
+          "precision": 0.34346642468239563,
+          "recall": 0.7495049504950495,
+          "f1": 0.4710640945861854
+        },
+        "Critical": {
+          "support": 233,
+          "true_positives": 125,
+          "false_positives": 518,
+          "false_negatives": 108,
+          "precision": 0.19440124416796267,
+          "recall": 0.5364806866952789,
+          "f1": 0.2853881278538813
+        }
+      },
+      "macro_recall": 0.6934467619624579,
+      "confusion_matrix": [
+        [
+          16857,
+          4234,
+          130
+        ],
+        [
+          371,
+          2271,
+          388
+        ],
+        [
+          1,
+          107,
+          125
+        ]
+      ]
+    },
+    "provenance": {
+      "reference_sha256": "fc4110e979e7d569cb8aa819d450d29311e799115b2fe5b519b8a18eafa37323",
+      "predictions_sha256": "a20a31b5f1233537d0bfe5fd20d1e56819fd20501edfe95f290f1c82187b7657",
+      "evaluation_only": "Reference labels are read only after predictions are frozen.",
+      "deployed_model_sha256": "e68b5d62bd0d674b4be277881b496d837eb42809d7abd024b8aec5c582807d9c"
+    }
+  },
+  "prior_unweighted_deployment": {
+    "holdout_regression": {
+      "rmse_log10_pc": 5.723389118184742,
+      "mae_log10_pc": 4.028132946502884,
+      "r2": 0.672953180724909
+    },
+    "holdout_tier_report": {
+      "Safe": {
+        "precision": 0.9678113398582517,
+        "recall": 0.9980422866092404,
+        "f1-score": 0.9826943671021632,
+        "support": 22986.0
+      },
+      "Elevated risk": {
+        "precision": 0.9864383793863367,
+        "recall": 0.8826027605035643,
+        "f1-score": 0.9316362471982068,
+        "support": 6593.0
+      },
+      "Critical (Maneuver Required)": {
+        "precision": 0.9930184804928132,
+        "recall": 0.9833265555103701,
+        "f1-score": 0.9881487535758071,
+        "support": 2459.0
+      },
+      "accuracy": 0.9731568762095012,
+      "macro avg": {
+        "precision": 0.9824227332458005,
+        "recall": 0.9546572008743915,
+        "f1-score": 0.9674931226253923,
+        "support": 32038.0
+      },
+      "weighted avg": {
+        "precision": 0.9735792539112217,
+        "recall": 0.9731568762095012,
+        "f1-score": 0.9726059143838882,
+        "support": 32038.0
+      }
+    },
+    "supplied_test": {
+      "target": "same-row reported risk = log10(Pc), not final-TCA risk",
+      "distance_unit": "m",
+      "rows": 24484,
+      "events": 2167,
+      "tier_correct_rows": 23369,
+      "tier_accuracy": 0.9544600555464793,
+      "latest_report_per_event": {
+        "rows": 2167,
+        "correct_rows": 2118,
+        "accuracy": 0.9773880941393632
+      },
+      "regression": {
+        "rmse_log10_pc": 6.039130980608997,
+        "mae_log10_pc": 4.4235114826217385,
+        "r2": 0.6238386788248147,
+        "within_one_log10_unit_rows": 4613,
+        "within_one_log10_unit_rate": 0.1884087567390949
+      },
+      "class_metrics": {
+        "Safe": {
+          "support": 15756,
+          "true_positives": 15697,
+          "false_positives": 933,
+          "false_negatives": 59,
+          "precision": 0.9438965724594107,
+          "recall": 0.9962553947702463,
+          "f1": 0.9693694806397827
+        },
+        "Elevated risk": {
+          "support": 6501,
+          "true_positives": 5532,
+          "false_positives": 137,
+          "false_negatives": 969,
+          "precision": 0.9758334803316282,
+          "recall": 0.8509460083064144,
+          "f1": 0.9091207888249795
+        },
+        "Critical": {
+          "support": 2227,
+          "true_positives": 2140,
+          "false_positives": 45,
+          "false_negatives": 87,
+          "precision": 0.9794050343249427,
+          "recall": 0.9609339919173776,
+          "f1": 0.970081595648232
+        }
+      },
+      "confusion_matrix_labels": [
+        "Safe",
+        "Elevated risk",
+        "Critical"
+      ],
+      "confusion_matrix": [
+        [
+          15697,
+          58,
+          1
+        ],
+        [
+          925,
+          5532,
+          44
+        ],
+        [
+          8,
+          79,
+          2140
+        ]
+      ],
+      "baselines": {
+        "distance_only": {
+          "correct_rows": 23368,
+          "accuracy": 0.9544192125469695
+        },
+        "majority_class": {
+          "class": "Safe",
+          "accuracy": 0.6435223002777324
+        }
+      },
+      "probability_only": {
+        "risk_ge_-6": {
+          "support": 3263,
+          "true_positives": 787,
+          "false_positives": 214,
+          "false_negatives": 2476,
+          "precision": 0.7862137862137862,
+          "recall": 0.2411890897946675,
+          "f1": 0.3691369606003752
+        },
+        "risk_ge_-4": {
+          "support": 233,
+          "true_positives": 39,
+          "false_positives": 114,
+          "false_negatives": 194,
+          "precision": 0.2549019607843137,
+          "recall": 0.16738197424892703,
+          "f1": 0.20207253886010362
+        }
+      },
+      "provenance": {
+        "reference_sha256": "fc4110e979e7d569cb8aa819d450d29311e799115b2fe5b519b8a18eafa37323",
+        "predictions_sha256": "66920c541b0b5e82db1b8e8056981d174e53886366cf197c5c8c83e97ef0d8fc",
+        "evaluation_only": "Reference labels are read only after predictions are frozen.",
+        "deployed_model_sha256": "d4f2035c9b01c44a93073267cf215d594934c2359bdffe28784aaa12fd05a289"
+      }
+    }
+  },
+  "provenance": {
+    "created_utc": "2026-10-31T07:34:49.839999+00:00",
+    "train_sha256": "ba47ce80580d5d6ff523ddc1d724901dbdfb3a5afdc5e755f0ca2bcefe6e4eb6",
+    "model_sha256": "e68b5d62bd0d674b4be277881b496d837eb42809d7abd024b8aec5c582807d9c",
+    "encoder_sha256": "264395e54ce0aa7f1e0fe7eb8934f05ea9db4d368f21425392cd547ab8ae6432"
+  }
+}

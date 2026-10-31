@@ -49,6 +49,18 @@ def test_repeated_event_ids_cannot_hide_row_reordering(paired_reports):
         benchmark_frames(reference, reordered)
 
 
+def test_probability_band_recall_exposes_errors_hidden_by_distance(paired_reports):
+    reference, predictions = paired_reports
+    reference = reference.assign(miss_distance=500.0)
+    predictions = predictions.assign(miss_distance=500.0, class_model="Critical")
+    report = benchmark_frames(reference, predictions)
+    assert report["tier_accuracy"] == 1.0
+    bands = report["probability_bands"]
+    assert bands["confusion_matrix"] == [[1, 0, 0], [1, 0, 0], [0, 0, 1]]
+    assert bands["macro_recall"] == pytest.approx(2/3)
+    assert bands["class_metrics"]["Elevated risk"]["recall"] == 0
+
+
 def test_unlabelled_upload_cannot_produce_an_accuracy_score(paired_reports):
     reference, predictions = paired_reports
     with pytest.raises(ValueError, match="risk"):

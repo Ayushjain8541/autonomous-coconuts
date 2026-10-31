@@ -1,0 +1,2 @@
+# Optional PDF export extra; the core numeric API and JSON reports use stdlib.
+reportlab>=4.2,<5

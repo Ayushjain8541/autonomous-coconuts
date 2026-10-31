@@ -1,0 +1,512 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RiskReport v1",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "analysis_id": {
+      "type": "string"
+    },
+    "report_id": {
+      "type": "string"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "enum": [
+        "ready",
+        "unavailable"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "enum": [
+            "synthetic_demo",
+            "uploaded_csv"
+          ]
+        },
+        "label": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "report_count": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "mode",
+        "label",
+        "sha256",
+        "report_count"
+      ],
+      "additionalProperties": false
+    },
+    "model": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "enum": [
+            "ready",
+            "fixture",
+            "unavailable"
+          ]
+        },
+        "target": {
+          "type": "string"
+        },
+        "feature_schema_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "version",
+        "status",
+        "target",
+        "feature_schema_version"
+      ],
+      "additionalProperties": false
+    },
+    "time_basis": {
+      "enum": [
+        "scenario_clock",
+        "per_event_latest_report"
+      ]
+    },
+    "statistics": {
+      "type": "object",
+      "properties": {
+        "total_encounters": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_report_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "severity_counts": {
+          "type": "object",
+          "properties": {
+            "critical": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "elevated": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "safe": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "unknown": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "critical",
+            "elevated",
+            "safe",
+            "unknown"
+          ],
+          "additionalProperties": false
+        },
+        "prediction_counts": {
+          "type": "object",
+          "properties": {
+            "ready": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "fixture": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "unavailable": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "ready",
+            "fixture",
+            "unavailable"
+          ],
+          "additionalProperties": false
+        },
+        "critical_within_24h": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "total_encounters",
+        "source_report_count",
+        "severity_counts",
+        "prediction_counts",
+        "critical_within_24h"
+      ],
+      "additionalProperties": false
+    },
+    "facts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": [
+              "number",
+              "string",
+              "null"
+            ]
+          },
+          "field": {
+            "type": "string"
+          },
+          "event_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "supporting_numbers": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "value",
+          "field",
+          "event_id",
+          "unit",
+          "supporting_numbers"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "what_if_scenarios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "string"
+          },
+          "scenario_id": {
+            "enum": [
+              "pc_lower",
+              "distance_larger",
+              "combined"
+            ]
+          },
+          "status": {
+            "enum": [
+              "hypothetical",
+              "unavailable"
+            ]
+          },
+          "pc_multiplier": {
+            "type": "number"
+          },
+          "distance_multiplier": {
+            "type": "number"
+          },
+          "assumed_pc": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1
+          },
+          "assumed_miss_distance_m": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "resulting_severity": {
+            "enum": [
+              "critical",
+              "elevated",
+              "safe",
+              "unknown"
+            ]
+          },
+          "flag_reasons": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "fact_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "event_id",
+          "scenario_id",
+          "status",
+          "pc_multiplier",
+          "distance_multiplier",
+          "assumed_pc",
+          "assumed_miss_distance_m",
+          "resulting_severity",
+          "flag_reasons",
+          "fact_ids"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "properties": {
+        "included_event_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "omitted_encounters": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "policy": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "included_event_ids",
+        "omitted_encounters",
+        "policy"
+      ],
+      "additionalProperties": false
+    },
+    "executive_summary": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "fact_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "text",
+            "fact_ids"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "key_findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "fact_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "text",
+          "fact_ids"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "priority_events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "string"
+          },
+          "assessment": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string"
+              },
+              "fact_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "text",
+              "fact_ids"
+            ],
+            "additionalProperties": false
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "action_id": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "rationale": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "type": "string"
+                    },
+                    "fact_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "text",
+                    "fact_ids"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "action_id",
+                "label",
+                "rationale"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "assessment_status": {
+            "enum": [
+              "cited_narrative",
+              "factual_fallback"
+            ]
+          }
+        },
+        "required": [
+          "event_id",
+          "assessment",
+          "actions",
+          "assessment_status"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "what_if_summary": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "fact_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "text",
+            "fact_ids"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "pdf_url": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "analysis_id",
+    "report_id",
+    "generated_at",
+    "status",
+    "source",
+    "model",
+    "time_basis",
+    "statistics",
+    "facts",
+    "what_if_scenarios",
+    "coverage",
+    "executive_summary",
+    "key_findings",
+    "priority_events",
+    "what_if_summary",
+    "limitations",
+    "warnings",
+    "pdf_url"
+  ],
+  "additionalProperties": false
+}

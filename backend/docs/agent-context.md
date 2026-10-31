@@ -1,15 +1,27 @@
-# P2: backend and LLM context
+# P2 backend and LLM context
 
-Own transport, CSV validation/grouping, API/schema decisions, orchestration and grounded insights. Read root AGENTS.md, product brief, P2 ticket and contracts.md. Framework, provider and internal design are yours; coordinate shared boundaries with P1/P3.
+Read root AGENTS.md, the product brief, P2 role brief and shared contracts. P2 owns backend/, shared API schemas and its tests; leave web/ and ml/ changes with P1/P3. Choose implementation tools freely. This P2 pass uses Superpowers inline execution, focused red/green tests and verification under direct user authorization.
 
-## Current local map
+## Actual map
 
-`server.py` is a local Python 3.9+ standard-library fixture server; no packages or API keys required. It serves only web/index.html, app.js and styles.css. `GET /api/health` reports model unavailable and insights unconfigured. `GET /api/demo` loads the synthetic fixture and calls P3's public risk-rule entrypoint. Upload/model and live-insights POST routes explicitly return 503 until implemented. No CSV parser, retained analysis store or live LLM exists yet. This server is not a production-hosting choice.
+- server.py: real local HTTP routes, bounded multipart/raw CSV uploads, retained result retrieval, insights requests, schemas and development CORS.
+- ingestion.py: strict all-or-error CSV parsing into the public P3 request shape; source units/types/provenance preserved.
+- analysis.py: invokes public ml functions, validates model outputs, selects latest source report, normalizes response/geometry and stores bounded TTL results.
+- config.py: reads ignored .env/.env.local plus process environment, without executing or logging secrets.
+- insights.py: bounded Anthropic Messages structured-output call; selects eligible review advice and combines it with source-rendered assessment facts/citations; explicit unavailable state on failure.
+- llm_context.py: shared operations brief, model/source/time/evidence context, exact comparison reasons, human-readable reference assessments, eligible review options and citation/numeric checks.
+- reports.py: full LLM narrative, portfolio counts, cited priority assessments, advisory actions and source-rendered P3 rule-sensitivity comparisons; exact report retention/cache.
+- report_pdf.py: optional ReportLab export with provenance, action rationale and comparison tables. Install backend/requirements.txt in the server environment.
+- README.md: exact setup, API recipe, limits and P1/P3 integration details. No external runtime dependency or API key is required for upload/numeric paths.
 
-## Commands and boundaries
+## Commands from repo root
 
-From repo root: `python3 backend/server.py --port 8000`; `python3 -m unittest discover -s tests -v`; `python3 scripts/check.py`; `./.beryl/scripts/check.sh`.
+`python3 backend/server.py --port 8000`; `python3 scripts/check.py`; `./.beryl/scripts/check.sh`. Local manual configuration is ANTHROPIC_API_KEY in ignored .env.local. Key changes are read without restart; Python code/model adapter changes need restart. No key file is distributed via Git.
 
-Optional shell settings: COCONUTS_HOST/COCONUTS_PORT, or CLI flags. `.env.example` is documentation; the baseline does not load .env automatically. Do not print credentials. No provider is chosen or configured by the scaffold.
+## Boundaries and truth
 
-Use the public `ml` package boundary and shared contract, not training internals. A classifier does not imply a trained model. If replacing the runtime, preserve endpoints/types/error semantics or coordinate amendments with P1/P3; update actual setup commands, test adapter and CI together. Provider access and real representative-call latency remain your integration investigation. Handoff: .beryl/agent/hackathon/handoffs/P2.md.
+HTTP keeps the shared v1 contract; schemas are in contracts/*.schema.json. prediction_report_ids is additive provenance for the restricted >=48h model input window. Fact references may include geometry. Public ml.predict_batch and ml.classify_encounter remain P3-owned. The current P3 adapter returns unavailable, so do not label null predictions or reported Pc as learned inference. The synthetic demo remains labeled. No global orbit coordinates are invented.
+
+The insight endpoint combines an exact source-rendered assessment with LLM-selected eligible review advice. It preserves the existing public response fields. The report endpoint uses the same context and writes actual narrative with validated references/numeric membership, eligible actions and explicit interpretation limits. What-if inputs are assumptions, not a maneuver optimizer or model-predicted improvements. Missing key, provider failure, refusal, unknown references or invalid output never blocks numeric analysis. Full reports use a separate 60s default deadline (maximum 90s); all provider calls share two global slots. API/retention limits, status codes and origin configuration are documented in backend/README.md. The server remains local development infrastructure, not a production deployment.
+
+Handoff and actual check evidence: .beryl/agent/hackathon/handoffs/P2.md. Update test manifest intentionally when adding tests. Preserve teammate changes; coordinate contract changes and PR integration.

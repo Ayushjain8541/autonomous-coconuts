@@ -205,4 +205,3 @@ def _statement(value,facts,event_id=None,limit=1000):
             if not matches:raise NumericClaimError('Explanation contained an unsupported numeric claim.')
             refs.extend(k for k in matches if k not in refs)
     return {'text':text.strip(),'fact_ids':list(dict.fromkeys(refs))}
-

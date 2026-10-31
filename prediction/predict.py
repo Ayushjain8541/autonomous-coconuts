@@ -1,6 +1,7 @@
 """Use the saved model to predict CSV risk values and write prediction_data.csv."""
 
 import argparse
+import io
 import json
 import os
 from pathlib import Path
@@ -64,23 +65,25 @@ def _encode_features(test_data, metadata):
     return pd.DataFrame(values, columns=columns, index=test_data.index)
 
 
-def create_prediction_csv(
-    test_path=None, output_path=None, *, artifact_dir=None, distance_unit=None,
-):
-    """Load the saved model, predict each input row, and export telemetry + risk/class."""
-    source = Path(test_path) if test_path is not None else (
-        ROOT / "test.csv" if (ROOT / "test.csv").is_file() else ROOT / "test_data.csv"
-    )
-    destination = Path(output_path) if output_path is not None else ROOT / "prediction_data.csv"
-    if source.resolve() == destination.resolve():
-        raise ValueError("Prediction output must differ from the input CSV.")
+def predict_dataframe(data, *, artifact_dir=None, distance_unit=None):
+    """Score telemetry without fitting; return a new frame with risk/class columns.
+
+    Risk columns are optional. Supplied target-derived values are discarded, and
+    the caller's frame is never modified. Output retains all telemetry rows in
+    their original order, including repeated event IDs.
+    """
+    if not isinstance(data, pd.DataFrame):
+        raise TypeError("Telemetry must be a pandas DataFrame.")
+    if data.empty:
+        raise ValueError("CSV must contain at least one telemetry row.")
+    if data.columns.duplicated().any():
+        raise ValueError("Telemetry column names must be unique.")
     directory = Path(artifact_dir) if artifact_dir is not None else ROOT / "artifacts"
     metadata = json.loads((directory / "feature_encoder.json").read_text())
     unit = distance_unit if distance_unit is not None else metadata["distance_unit"]
 
     # Explicitly discard all target-derived fields BEFORE generating predictions.
-    test_data = pd.read_csv(source)
-    test_data = test_data.drop(columns=list(FORBIDDEN_COLUMNS), errors="ignore")
+    test_data = data.drop(columns=list(FORBIDDEN_COLUMNS), errors="ignore").copy()
     features = _encode_features(test_data, metadata)
     classify_risk(np.full(len(test_data), -7.0), test_data["miss_distance"],
                   distance_unit=unit)
@@ -106,6 +109,49 @@ def create_prediction_csv(
     test_data["risk"] = np.minimum(risk, 0.0)  # log10(Pc) <= 0, since Pc <= 1.
     test_data["class_model"] = classify_risk(
         test_data["risk"], test_data["miss_distance"], distance_unit=unit
+    )
+    return test_data
+
+
+def predict_uploaded_csv(csv_content, *, artifact_dir=None, distance_unit=None):
+    """Score CSV bytes, text, or an uploaded file stream entirely in memory.
+
+    The backend can pass uploaded bytes or its readable upload stream directly.
+    No upload filename is used as a server path, no shared output is overwritten,
+    and the saved model is reused. HTTP transport and download responses belong
+    to the consuming backend; this helper returns the scored DataFrame.
+    """
+    if isinstance(csv_content, (bytes, bytearray)):
+        source = io.BytesIO(csv_content)
+    elif isinstance(csv_content, str):
+        source = io.StringIO(csv_content)
+    elif hasattr(csv_content, "read"):
+        source = csv_content
+    else:
+        raise TypeError("Upload must be CSV bytes, text, or a readable file stream.")
+    try:
+        data = pd.read_csv(source, encoding="utf-8")
+    except pd.errors.EmptyDataError as error:
+        raise ValueError("Uploaded CSV is empty or has no header.") from error
+    except pd.errors.ParserError as error:
+        raise ValueError("Uploaded CSV could not be parsed.") from error
+    except UnicodeDecodeError as error:
+        raise ValueError("Uploaded CSV must use UTF-8 encoding.") from error
+    return predict_dataframe(data, artifact_dir=artifact_dir, distance_unit=distance_unit)
+
+
+def create_prediction_csv(
+    test_path=None, output_path=None, *, artifact_dir=None, distance_unit=None,
+):
+    """Score a local CSV and write telemetry + risk/class to a separate file."""
+    source = Path(test_path) if test_path is not None else (
+        ROOT / "test.csv" if (ROOT / "test.csv").is_file() else ROOT / "test_data.csv"
+    )
+    destination = Path(output_path) if output_path is not None else ROOT / "prediction_data.csv"
+    if source.resolve() == destination.resolve():
+        raise ValueError("Prediction output must differ from the input CSV.")
+    test_data = predict_dataframe(
+        pd.read_csv(source), artifact_dir=artifact_dir, distance_unit=distance_unit
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     test_data.to_csv(destination, index=False)

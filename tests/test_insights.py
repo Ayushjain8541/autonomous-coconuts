@@ -31,9 +31,9 @@ class ProviderHandler(BaseHTTPRequestHandler):
         if mode == 'error':
             self.send_response(429);self.end_headers();return
         if mode == 'bad':
-            result = {'items': [{'event_id': packet['events'][0]['event_id'], 'observations': ['MADE_UP_MANEUVER']}]}
+            result = {'items': [{'event_id': packet['events'][0]['event_id'], 'next_step_id': 'MADE_UP_REVIEW'}]}
         else:
-            result = {'items': [{'event_id': e['event_id'], 'observations': [e['available_observations'][0]['code']]} for e in packet['events']]}
+            result = {'items': [{'event_id': e['event_id'], 'next_step_id': e['review_options'][0]['option_id']} for e in packet['events']]}
         response = {'id': 'msg_test', 'type': 'message', 'role': 'assistant', 'model': 'test-model',
                     'content': [{'type': 'text', 'text': json.dumps(result)}],
                     'stop_reason': 'refusal' if mode == 'refusal' else 'end_turn',
@@ -69,13 +69,23 @@ class InsightsTests(unittest.TestCase):
         self.assertEqual(result['status'],'ready')
         self.assertEqual(result['analysis_id'],self.analysis['analysis_id'])
         item=result['items'][0]
-        self.assertTrue(item['summary'])
+        self.assertIn('Assessment: Critical.',item['summary'])
+        self.assertIn('is below its 1000 m criterion',item['summary'])
+        self.assertIn('from the reference, outside the 24-hour window',item['summary'])
+        self.assertIn('Escalate to mission operations',item['summary'])
         self.assertEqual(item['event_id'],self.ids[0])
         self.assertTrue(item['fact_refs'])
         self.assertTrue(any('Synthetic' in x or 'synthetic' in x for x in item['limitations']))
         request=self.provider.requests[0]
         self.assertEqual(request['output_config']['format']['type'],'json_schema')
         self.assertNotIn('api_key',json.dumps(self.provider.last_packet))
+        context=self.provider.last_packet
+        self.assertEqual(context['operations_context']['model'], self.analysis['model'])
+        reason=context['events'][0]['classification_reasons'][1]
+        self.assertEqual((reason['field'], reason['operator'], reason['value'], reason['threshold']),
+                         ('miss_distance_m', '<', 800, 1000))
+        self.assertIn('not a time trend', request['system'])
+        self.assertIn('not countdowns', request['system'])
 
     def test_cache_avoids_duplicate_paid_requests(self):
         self.service.generate(self.analysis,self.ids);self.service.generate(self.analysis,self.ids)

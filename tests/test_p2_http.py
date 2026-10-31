@@ -102,7 +102,7 @@ class P2HTTPTests(unittest.TestCase):
             with urllib.request.urlopen(request,timeout=3) as response: result=json.load(response)
             self.assertEqual(result['status'],'ready')
             self.assertEqual(result['items'][0]['event_id'],'a')
-            self.assertIn('critical',result['items'][0]['summary'])
+            self.assertIn('critical',result['items'][0]['summary'].lower())
             self.assertEqual(result['items'][0]['fact_refs'][0]['event_id'],'a')
             provider.mode='truncated'
             with urllib.request.urlopen(upload,timeout=3) as response: second=json.load(response)

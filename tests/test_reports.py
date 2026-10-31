@@ -77,6 +77,18 @@ class ReportTests(unittest.TestCase):
         self.assertTrue(all(x['status']=='unavailable' for x in scenarios))
         self.assertTrue(all(x['assumed_miss_distance_m'] is None for x in scenarios))
 
+    def test_what_if_rewording_cannot_override_remaining_critical_trigger(self):
+        def change(result):
+            result['what_if_summary']={'text':'Doubling separation yields elevated despite Pc remaining 0.0002.',
+                'fact_ids':['scenario.0.distance_larger.resulting_severity']}
+        report=self.service(ReportClient(change)).generate(self.analysis)
+        self.assertEqual(report['status'],'ready')
+        text=report['what_if_summary']['text']
+        self.assertIn('separation multiplied by 2 alone yields critical',text)
+        self.assertIn('combining both assumptions yields elevated',text)
+        self.assertNotIn('despite Pc',text)
+        self.assertTrue(any('rewritten AI interpretation' in warning for warning in report['warnings']))
+
     def test_policy_window_and_derived_scenario_values_are_supported_evidence(self):
         def change(result):
             result['executive_summary']={'text':'There are no critical encounters within 24 hours.', 'fact_ids':['portfolio.critical_within_24h']}

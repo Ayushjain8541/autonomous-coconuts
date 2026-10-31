@@ -115,3 +115,17 @@ Use `.venv/bin/python -m pip install -r backend/requirements-full.txt` for P3 in
 `backend/model_adapter.py` is the P2 bridge. P3 predictor/training/rule source and weights are unchanged. Model and encoder SHA-256 prefixes identify the exact artifacts used; no training runs during uploads. The legacy public ml.predict_batch placeholder remains unchanged but is no longer the HTTP service default.
 
 Numeric key findings with unsupported quantities are replaced by cited source counts and an explicit warning. Other invalid references/identities or unsupported executive/assessment/action claims still make the narrative unavailable. Hour values may use the supplied two-decimal display; source values and classifications remain unchanged.
+
+
+### macOS saved-model setup
+
+Use a current Python (3.12 recommended) for the full pinned prediction environment, rather than the macOS Command Line Tools Python3.9. Create the root environment, which the integrated launcher selects automatically:
+
+```sh
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -r backend/requirements-full.txt
+brew install libomp
+./start.command
+```
+
+XGBoost requires OpenMP on macOS. Without libomp, installed Python packages alone do not make the model usable. Restart existing API processes after changing the environment. The launcher does not replace a running server. Backend health alone proves HTTP availability; upload a feature-complete CSV and check prediction_status ready to verify saved-model inference. AI narratives still require separately configured provider credentials.

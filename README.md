@@ -7,10 +7,11 @@ An operator loads encounter reports; a model estimates collision probability for
 **Deadline:** 31 October 2026, 4:15 pm Singapore time. **Team:** P1 UI, P2 backend/LLM, P3 ML/algorithm, P4 floating support.
 
 
-**Measured ML benchmark:** 95.45% agreement with the supplied same-row risk tiers
-(23,369/24,484 reports). The distance-only baseline is
-95.44%, so this is primarily a policy-agreement metric, not a claim of
-precise collision-probability prediction. [Training method and full evidence](#ml-training-and-benchmark-evidence).
+**Current weighted-model benchmark:** probability-only Critical recall is
+53.65% (125/233 reports), compared with 16.74% for the previous model.
+Combined-tier agreement is 87.87% (21,514/24,484 reports); the distance-only
+baseline is 95.44%. The update prioritizes Critical sensitivity, with more
+false alerts and higher regression error. [Training method and full evidence](#ml-training-and-benchmark-evidence).
 
 ## Join independently
 
@@ -78,9 +79,10 @@ Original Airbus #2 brainstorming is [archived](.beryl/agent/hackathon/archive/ai
 ## Model development and CSV prediction
 
 
-The model workflow below estimates the risk on each telemetry row. It remains
-separate from the bootstrap HTTP adapter and does not implement the shared
-final-report forecasting target described in the team contracts.
+The model workflow below estimates the risk on each telemetry row. The backend
+uses the same saved predictor on each encounter's latest available report.
+Training remains separate from prediction; uploads reuse the deployed artifact
+without retraining.
 
 The workspace has separate development and prediction workflows:
 
@@ -115,6 +117,51 @@ working directory:
 ```bash
 .venv/bin/python prediction/predict.py --input prediction/test.csv --output prediction/data_prediction.csv
 ```
+
+### Updated model, same CSV format
+
+The frequency-adaptive XGBoost model uses the existing prediction workflow and
+output schema:
+
+```text
+test_data.csv (or test.csv) -> saved weighted model -> data_prediction.csv
+```
+
+`prediction/data_prediction.csv` preserves the input telemetry, row order, and
+repeated event IDs, with these prediction columns:
+
+| Column | Format |
+| --- | --- |
+| `risk` | Predicted numeric `log10(Pc)` from the updated model |
+| `class_model` | Exactly `Safe`, `Elevated risk`, or `Critical` |
+
+The prediction CSV keeps these column names for compatibility with existing
+consumers. The development-only dashboard export uses `predicted_risk` and
+`risk_tier`; those names do not replace `risk` and `class_model` in this workflow.
+
+New input files can omit all risk fields. Any supplied `risk`,
+`max_risk_estimate`, and `max_risk_scaling` are removed before prediction;
+the output receives newly predicted `risk` and `class_model`. Distance units,
+classification thresholds, and Critical precedence are unchanged.
+
+The file helper `create_prediction_csv`, DataFrame helper `predict_dataframe`,
+and upload helper `predict_uploaded_csv` all load the updated model and encoder
+from `prediction/artifacts/` by default. An upload endpoint can generate the same
+CSV format in memory:
+
+```python
+from prediction.predict import predict_uploaded_csv
+
+scored = predict_uploaded_csv(uploaded_csv_bytes)
+download_bytes = scored.to_csv(index=False).encode("utf-8")
+```
+
+Verification on the supplied file confirmed **24,484 rows and 102 columns**, with
+matching predictions through the file and DataFrame helpers and uploads without
+risk columns.
+The column count includes the supplied file's telemetry; uploads preserve their
+own telemetry columns. See [prediction/UPLOAD_HANDOFF.md](prediction/UPLOAD_HANDOFF.md)
+for consumer integration details. Generated CSVs remain local and excluded from Git.
 
 Run development tests or open the notebook:
 

@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import importlib.util
+import io
 from pathlib import Path
 
 from collision_risk import (
@@ -391,3 +392,98 @@ def test_training_artifacts_are_compatible_with_prediction_workflow(
     }).tolist()
     assert not {"max_risk_estimate", "max_risk_scaling"}.intersection(result.columns)
     assert source.read_bytes() == original
+
+
+@pytest.fixture
+def upload_predictor(tmp_path, telemetry, monkeypatch):
+    """Synthetic constant-risk artifact makes upload labels unambiguous."""
+    path = Path(__file__).resolve().parents[2] / "prediction" / "predict.py"
+    specification = importlib.util.spec_from_file_location("upload_prediction", path)
+    inference = importlib.util.module_from_spec(specification)
+    specification.loader.exec_module(inference)
+    train = pd.concat([telemetry] * 8, ignore_index=True).assign(risk=-7.0)
+    model, encoder = fit_final_model(
+        train, TrainingConfig(max_estimators=1, n_jobs=1, max_depth=1), best_rounds=1
+    )
+    directory = tmp_path / "upload-model"
+    directory.mkdir()
+    model.save_model(directory / "collision_risk_model.ubj")
+    encoder.save(directory / "feature_encoder.json", distance_unit="m")
+
+    def forbid_training(*args, **kwargs):
+        pytest.fail("Upload inference must not retrain the model.")
+
+    monkeypatch.setattr(XGBRegressor, "fit", forbid_training)
+    return inference, directory
+
+
+@pytest.mark.parametrize("format", ["bytes", "text", "binary_stream", "text_stream"])
+def test_uploaded_csv_needs_no_risk_fields(upload_predictor, telemetry, format):
+    inference, directory = upload_predictor
+    source = telemetry.reset_index(drop=True).assign(mission_id=[2, 8, 2, 7])
+    text = source.to_csv(index=False)
+    inputs = {
+        "bytes": text.encode("utf-8"), "text": text,
+        "binary_stream": io.BytesIO(text.encode("utf-8")),
+        "text_stream": io.StringIO(text),
+    }
+    result = inference.predict_uploaded_csv(inputs[format], artifact_dir=directory)
+    pd.testing.assert_frame_equal(result.drop(columns=["risk", "class_model"]), source)
+    np.testing.assert_array_equal(result["risk"], [-7.0] * len(source))
+    assert result["class_model"].tolist() == [SAFE, ELEVATED, "Critical", SAFE]
+
+
+def test_dataframe_prediction_does_not_mutate_caller(upload_predictor, telemetry):
+    inference, directory = upload_predictor
+    source = telemetry.assign(risk=999.0, max_risk_estimate=999.0, max_risk_scaling=999.0)
+    original = source.copy(deep=True)
+    result = inference.predict_dataframe(source, artifact_dir=directory)
+    pd.testing.assert_frame_equal(source, original)
+    assert result.index.equals(source.index)
+    assert result["event_id"].tolist() == source["event_id"].tolist()
+    assert not {"max_risk_estimate", "max_risk_scaling"}.intersection(result.columns)
+    np.testing.assert_array_equal(result["risk"], [-7.0] * len(source))
+
+
+def test_uploaded_target_values_cannot_influence_predictions(upload_predictor, telemetry):
+    inference, directory = upload_predictor
+    outputs = []
+    for poison in (-999999.0, 999999.0):
+        source = telemetry.assign(risk=poison, max_risk_estimate=poison, max_risk_scaling=poison)
+        outputs.append(inference.predict_uploaded_csv(
+            source.to_csv(index=False).encode("utf-8"), artifact_dir=directory
+        ))
+    pd.testing.assert_frame_equal(outputs[0], outputs[1])
+
+
+def test_uploaded_csv_missing_required_feature_is_rejected(upload_predictor, telemetry):
+    inference, directory = upload_predictor
+    source = telemetry.drop(columns="miss_distance").to_csv(index=False).encode("utf-8")
+    with pytest.raises(ValueError, match="miss_distance"):
+        inference.predict_uploaded_csv(source, artifact_dir=directory)
+
+
+@pytest.mark.parametrize("headers_only", [False, True])
+def test_empty_upload_is_rejected(upload_predictor, telemetry, headers_only):
+    inference, directory = upload_predictor
+    source = telemetry.iloc[:0].to_csv(index=False).encode("utf-8") if headers_only else b""
+    with pytest.raises(ValueError, match="empty|at least one"):
+        inference.predict_uploaded_csv(source, artifact_dir=directory)
+
+
+@pytest.mark.parametrize("source", [b'column\n"unterminated', b'\xff', Path("upload.csv")])
+def test_invalid_upload_content_is_rejected(upload_predictor, source):
+    inference, directory = upload_predictor
+    with pytest.raises((ValueError, TypeError)):
+        inference.predict_uploaded_csv(source, artifact_dir=directory)
+
+
+def test_upload_inference_does_not_write_shared_files(
+    upload_predictor, telemetry, tmp_path, monkeypatch
+):
+    inference, directory = upload_predictor
+    monkeypatch.chdir(tmp_path)
+    before = set(tmp_path.rglob("*"))
+    inference.predict_uploaded_csv(telemetry.to_csv(index=False).encode("utf-8"),
+                                   artifact_dir=directory)
+    assert set(tmp_path.rglob("*")) == before

@@ -25,7 +25,6 @@ __pycache__/
 .beryl/.updates/
 
 # Local ML development outputs
-prediction_data.csv
 .pytest_cache/
 .ipynb_checkpoints/
 .jupyter/

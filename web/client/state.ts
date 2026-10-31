@@ -5,3 +5,6 @@ export function filteredEncounters(analysis:AnalysisResult,days:number,criticalO
 export function globalCritical(analysis:AnalysisResult):Encounter|undefined{return analysis.encounters.filter(e=>e.severity==='critical').sort((a,b)=>a.time_to_tca_hours-b.time_to_tca_hours||a.event_id.localeCompare(b.event_id))[0]}
 export function outsideFilter(id:string|null,rows:Encounter[]){return id!==null&&!rows.some(row=>row.event_id===id)}
 export class InsightGuard {private revision=0;begin(){return ++this.revision}invalidate(){++this.revision}current(token:number,expectedAnalysis:string,currentAnalysis:string,expectedEvent:string,currentEvent:string|null){return token===this.revision&&expectedAnalysis===currentAnalysis&&expectedEvent===currentEvent}}
+
+/** Cancelling or replacing an operation invalidates even a late successful response. */
+export class OperationGuard {private generation=0;begin(){return ++this.generation}cancel(){++this.generation}current(token:number){return token===this.generation}}

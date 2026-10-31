@@ -15,3 +15,13 @@ test('uploaded historical batches cannot acquire an invented common clock',()=>{
 test('insight references must match requested event, same analysis and field allowlist',()=>{const a=parseAnalysis(fixture);assert.equal(parseInsights(insights,a,['demo-critical-36h']).status,'fixture');for(const corrupt of [(d:any)=>d.analysis_id='old',(d:any)=>d.items[0].fact_refs[0].event_id='demo-safe-20h',(d:any)=>d.items[0].fact_refs[0].field='__proto__',(d:any)=>d.items[0].event_id='unknown']){const d=structuredClone(insights);corrupt(d);assert.throws(()=>parseInsights(d,a,['demo-critical-36h']))}});
 test('stale insight generation or selection or analysis is rejected',()=>{const guard=new InsightGuard(),old=guard.begin();assert.equal(guard.current(old,'a','a','e','e'),true);guard.invalidate();assert.equal(guard.current(old,'a','a','e','e'),false);const current=guard.begin();assert.equal(guard.current(current,'a','b','e','e'),false);assert.equal(guard.current(current,'a','a','e','other'),false)});
 test('structured validation errors preserve row/column details and supplied total',()=>{const e=parseApiError({error:{code:'INVALID_CSV',message:'Required data missing',details:[{row:7,column:'event_id',reason:'required'}],total_error_count:12}},422);assert.equal(e.code,'INVALID_CSV');assert.equal(e.details[0].row,7);assert.equal(e.total,12);assert.equal(parseApiError({},503).code,'HTTP_ERROR')});
+
+// Transport cancellation must survive providers that resolve after abort.
+test('cancelled operation cannot apply a late success or failure or reset a newer operation',async()=>{
+ const {OperationGuard}=await import('../client/state.ts');const guard=new OperationGuard();const first=guard.begin();
+ let resolve!:(value:string)=>void;const response=new Promise<string>(r=>{resolve=r});let applied='preserved';
+ const completion=response.then(value=>{if(guard.current(first))applied=value});
+ guard.cancel();const second=guard.begin();resolve('stale success');await completion;
+ assert.equal(applied,'preserved');assert.equal(guard.current(first),false);assert.equal(guard.current(second),true);
+ guard.cancel();assert.equal(guard.current(second),false);
+});

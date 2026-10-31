@@ -1,6 +1,7 @@
 import { Viewer, ArcGisMapServerImageryProvider, EllipsoidTerrainProvider, Cartesian3, Math as CesiumMath, Color, SceneMode, ScreenSpaceEventType, PerspectiveFrustum, DirectionalLight } from 'cesium';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 import './style.css';
+import {createDecorativeOrbit} from './decorative-orbit';
 import { setupWorkspace } from './workspace';
 import { globeFitHeight } from '../web/client/globe-fit.ts';
 
@@ -21,12 +22,18 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <section id="help" class="help-panel" aria-labelledby="help-title" hidden><div class="help-heading"><h2 id="help-title">Explore Earth</h2><button id="help-close" aria-label="Close navigation help">${icon('<path d="m6 6 12 12M6 18 18 6"/>')}</button></div><dl><div><dt>Rotate</dt><dd>Drag or arrow keys</dd></div><div><dt>Zoom</dt><dd>Scroll, pinch or + / −</dd></div><div><dt>Reset view</dt><dd>Home</dd></div></dl><p>For keyboard navigation, focus the globe first. Satellite detail varies by location.</p></section>
   <div id="status" class="status" role="status"><span class="loading-dot" aria-hidden="true"></span>Loading satellite imagery…</div>
   <section id="error" class="error-panel" role="alert" hidden><h2 id="error-title">Earth couldn’t load</h2><p id="error-message"></p><button id="retry">Try again</button></section>
-  <footer><span class="gesture-hint">Drag to explore <span aria-hidden="true">·</span> Scroll to zoom</span><output id="altitude" aria-label="Camera altitude"></output></footer>
+  <span class="orbital-label">Illustrative orbital animation</span><button id="orbit-motion" class="orbit-motion">Pause illustrative orbits</button><footer><span class="gesture-hint">Drag to explore <span aria-hidden="true">·</span> Scroll to zoom</span><output id="altitude" aria-label="Camera altitude"></output></footer>
 </section></main>`;
 const globe = document.querySelector<HTMLDivElement>('#globe')!;
 const status = document.querySelector<HTMLDivElement>('#status')!;
 const error = document.querySelector<HTMLElement>('#error')!;
 let viewer: Viewer | undefined;
+let decoration:ReturnType<typeof createDecorativeOrbit>|undefined;
+let orbitsPaused=false;
+function syncDecoration(){const button=document.querySelector<HTMLButtonElement>('#orbit-motion')!;const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;button.disabled=reduced;button.textContent=reduced?'Illustrative orbits · reduced motion':orbitsPaused?'Resume illustrative orbits':'Pause illustrative orbits';button.setAttribute('aria-pressed',String(orbitsPaused));decoration?.setPaused(orbitsPaused);decoration?.setActive(document.querySelector('main')!.classList.contains('dashboard')&&!document.querySelector('main')!.classList.contains('encounter-route')&&!document.hidden);}
+document.querySelector('#orbit-motion')!.addEventListener('click',()=>{orbitsPaused=!orbitsPaused;syncDecoration();});
+const orbitMotionPreference=window.matchMedia('(prefers-reduced-motion: reduce)');orbitMotionPreference.addEventListener('change',syncDecoration);
+const routeObserver=new MutationObserver(syncDecoration);routeObserver.observe(document.querySelector('main')!,{attributes:true,attributeFilter:['class']});document.addEventListener('visibilitychange',syncDecoration);window.addEventListener('pagehide',event=>{if(!event.persisted){decoration?.dispose();routeObserver.disconnect();document.removeEventListener('visibilitychange',syncDecoration);orbitMotionPreference.removeEventListener('change',syncDecoration);}});
 let loadingTimer: ReturnType<typeof setTimeout>;
 let successfulTiles = false;
 let initialization = 0;
@@ -40,13 +47,14 @@ function reset() { overviewHeight = fittedHeight(); viewer?.camera.flyTo({ desti
 function zoom(inward: boolean) { if (!viewer) return; const height = viewer.camera.positionCartographic.height; const target = Math.min(Math.max(40_000_000, fittedHeight()), Math.max(1000, height * (inward ? .64 : 1.36))); inward ? viewer.camera.zoomIn(Math.max(0, height - target)) : viewer.camera.zoomOut(Math.max(0, target - height)); viewer.scene.requestRender(); }
 async function initialize() {
   const generation = ++initialization;
+  decoration?.dispose();decoration=undefined;
   if (viewer && !viewer.isDestroyed()) viewer.destroy();
   viewer = undefined;
   clearTimeout(loadingTimer); error.hidden = true; status.hidden = false; status.textContent = 'Loading satellite imagery…'; successfulTiles = false;
   loadingTimer = setTimeout(() => { if (!successfulTiles) showError('Satellite imagery is taking too long to arrive. Check your connection and try again.'); }, 25_000);
   try {
     viewer = new Viewer(globe, { baseLayer: false, terrainProvider: new EllipsoidTerrainProvider(), animation: false, timeline: false, baseLayerPicker: false, geocoder: false, homeButton: false, sceneModePicker: false, navigationHelpButton: false, fullscreenButton: false, infoBox: false, selectionIndicator: false, skyBox: false, skyAtmosphere: undefined, sceneMode: SceneMode.SCENE3D, requestRenderMode: true, maximumRenderTimeChange: Infinity, contextOptions: { webgl: { alpha: false, antialias: true, powerPreference: 'high-performance' } } });
-    const current = viewer;
+    const current = viewer;decoration=createDecorativeOrbit(current,reducedMotion);syncDecoration();
     const provider = await ArcGisMapServerImageryProvider.fromUrl('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer', { maximumLevel: 19 });
     if (generation !== initialization) return;
     const requestImage = provider.requestImage.bind(provider);

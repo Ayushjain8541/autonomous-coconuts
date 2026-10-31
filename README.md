@@ -20,7 +20,7 @@ with learned risk estimates, interactive geometry and AI-assisted briefings.
 
 ---
 
-## Live demo
+## Live demonstration
 
 [Watch the Coconut Autonomous live demo on YouTube](https://www.youtube.com/watch?v=QCxIsH1zZBE).
 

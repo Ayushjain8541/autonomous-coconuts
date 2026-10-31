@@ -10,3 +10,7 @@
 - Tests and tests/.manifest.sha256 intentionally added/updated for the new runnable baseline. No existing test was weakened. One upstream skill document's trailing blank line was normalized for the repository whitespace check; its instructions were not changed. Beryl's affected-test configuration points to real scripts/check.py, and CI runs Python/Node plus the aggregate Beryl gate.
 - Product gaps: full CSV/model/LLM path, training data/artifact/evaluation, complete linked UI/trajectory evidence, provider access/latency and deployment/submission. P2/P3/P1/P4 retain the ownership in team.md; passing bootstrap checks is not product completion.
 - No provider credentials, raw datasets, hooks activation, deployment, automatic merge or teammate messages. No temporary session-state file was created.
+
+## CI portability follow-up
+
+The first Linux CI run passed all Python tests but found generated Python bytecode inside the broad tests/** manifest scope. The local runtime uses an external bytecode cache, so a normal fresh local clone did not show it. Reproduced the failure by explicitly writing a tests/__pycache__/ bytecode file; excluded generated cache/pyc files in the target-owned manifest configuration. Actual test sources remain covered. Regenerated/checked the manifest without weakening tests, then re-ran the aggregate gate. Read remote CI evidence from the Actions run for the published follow-up revision.

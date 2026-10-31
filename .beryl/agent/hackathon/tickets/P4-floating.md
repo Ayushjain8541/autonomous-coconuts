@@ -14,7 +14,7 @@ Stay out of P1/P2/P3-owned files unless the owner agrees a bounded assistance sc
 
 ## Integration responsibility
 
-Coordinate merging compatible role branches in dependency order with the owners, preserving concurrent changes. Consolidate actual setup commands and model artifact provisioning once they exist. Verify a real UI/API/model round trip and record insight status/failure handling. The current context/fixture baseline is not an application scaffold or Beryl installation; do not claim otherwise.
+Coordinate merging compatible role branches in dependency order with the owners, preserving concurrent changes. Consolidate actual setup commands and model artifact provisioning once they exist. Verify a real UI/API/model round trip and record insight status/failure handling. The authorized bootstrap now supplies a genuine Beryl installation, local development areas and runnable fixture shell. That is not completed trained inference, CSV ingestion, live LLM or the full product.
 
 P4 does not automatically own every uncompleted task. Keep enough time for integration and submission readiness; prioritise dependency-unblocking work over optional polish. Do not publish/deploy, merge automatically, create provider accounts or message teammates without the appropriate human authorization.
 

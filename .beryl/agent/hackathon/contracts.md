@@ -1,6 +1,6 @@
 # Shared interfaces v1 — proposed handshake
 
-**Contract owner: P2. Consumers: P1 and P3; verifier: P4.** These shapes and semantics let owners start independently. The HTTP endpoints and model adapter below are proposed interfaces, not existing implementation. Producers/consumers may amend them together; update examples and affected handoffs in the same change. Internal architecture, framework, test runner and provider remain individual choices.
+**Contract owner: P2. Consumers: P1 and P3; verifier: P4.** These shapes and semantics let owners start independently. This is the shared v1 handshake. The bootstrap implements GET /api/demo and GET /api/health, plus explicit unavailable POST responses. The batch adapter exists but returns unavailable; the real upload/model/LLM behavior remains to implement. Producers/consumers may amend them together; update examples and affected handoffs in the same change. Internal architecture, framework, test runner and provider remain individual choices.
 
 ## HTTP boundary (P1 ↔ P2)
 

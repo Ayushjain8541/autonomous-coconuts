@@ -1,6 +1,6 @@
 # P2 — Backend and grounded LLM insights
 
-**Owner:** P2. **Suggested branch:** `p2/backend-llm`. **Scope:** `backend/`, shared `contracts/`, canonical contracts.md, backend dependencies/setup/checks and handoffs/P2.md. **Requirements:** A1-01/04, U-01/03; integration of P3's A1-02/05. Role specification only; no implementation is claimed.
+**Owner:** P2. **Suggested branch:** `p2/backend-llm`. **Scope:** `backend/`, shared `contracts/`, canonical contracts.md, backend dependencies/setup/checks and handoffs/P2.md. **Requirements:** A1-01/04, U-01/03; integration of P3's A1-02/05. Full role outcome remains open; a replaceable bootstrap exists with local folder instructions and verified setup/check commands.
 
 ## Read
 

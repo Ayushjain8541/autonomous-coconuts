@@ -9,7 +9,7 @@ Roles are **P1, P2, P3, P4**, as requested by the user. Do not invent names or d
 | P3 | `ml/`, model artifacts/manifests, training/data transforms, prediction adapter, deterministic tiers and ML/rule tests | Rule semantics in requirements.md with P2/P1; integration packaging with P2 |
 | P4 | `docs/`, root README/setup integration, `tests/e2e/`, optional CI/deployment config, open-task queue and integration ledger | May assist an owned area only through a scoped claim agreed with its owner |
 
-These are ownership boundaries, not mandatory frameworks or internal folder trees. Apps do not exist yet. Owners may agree a different boundary; update the contract and affected role briefs together. P4 coordinates integration and root/shared setup; P2 remains the API contract owner. Each role owns its handoff at `.beryl/agent/hackathon/handoffs/Pn.md`.
+These are ownership boundaries, not mandatory final frameworks or internal folder trees. A replaceable browser/server baseline now exists, with local context in each development area. Owners may agree a different boundary; update the contract and affected role briefs together. P4 coordinates integration and root/shared setup; P2 remains the API contract owner. Each role owns its handoff at `.beryl/agent/hackathon/handoffs/Pn.md`.
 
 ## Branches and handoffs
 

@@ -29,3 +29,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## Beryl
+
+Beryl standard components installed by their actual installer from https://github.com/Praneeth-Suresh/Beryl at `c2d2c6c86d2bf0ffe0647883c0ccd2bdd69791ab`. Upstream Apache-2.0 LICENSE and NOTICE are retained. Project tool shims and canonical project context are adapted to the user's independent-work agreement; installer provenance is preserved in .beryl/lock.json.

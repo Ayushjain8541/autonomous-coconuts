@@ -6,7 +6,7 @@ This is the Autonomous Coconuts workspace for **Airbus Challenge #1: satellite c
 
 The user explicitly requested **shared context for independent work**, with freedom for individuals to choose how they work. Choose your own tools, frameworks, design style, implementation method and relevant skills. Do not impose a mandatory Superpowers/ECC/GSD workflow, extra approval interview, fixed sequence of implementation steps, or blanket TDD requirement because the coordinator mentions one. The user's latest instruction overrides those workflow prescriptions. Ordinary collaboration and checks that establish your delivered behavior still apply.
 
-The project-local coordinator lives at `.agents/skills/hackathon-build/SKILL.md`. Use relevant parts for context, scope, ownership and handoffs under the working agreement above. `.beryl/agent/` contains coordination documents; Beryl itself is **not installed**. No runtime or application scaffold exists in this baseline.
+The project-local coordinator lives at `.agents/skills/hackathon-build/SKILL.md`. Use relevant parts for context, scope, ownership and handoffs under the working agreement above. Beryl standard is installed from pinned source; read `.beryl/agent/custom-settings/hackathon.md` for the project adaptation before upstream workflow defaults. The replaceable Python/browser baseline proves fixture connectivity, not trained prediction or live LLM behavior.
 
 ## Shared boundaries
 
@@ -19,4 +19,4 @@ The project-local coordinator lives at `.agents/skills/hackathon-build/SKILL.md`
 
 ## Navigation
 
-Canonical context: `.beryl/agent/hackathon/README.md`. JSON response examples: `contracts/fixtures/`. Planned ownership prefixes such as `web/`, `backend/`, and `ml/` do not imply these apps already exist. Do not claim commands work until the owner has implemented and run them.
+Canonical context: `.beryl/agent/hackathon/README.md`. JSON response examples: `contracts/fixtures/`. Development areas `web/`, `backend/`, and `ml/` have local `docs/agent-context.md` files. Read the relevant local context. Run `python3 backend/server.py --port 8000` for the fixture; `python3 -m unittest discover -s tests -v` and `./.beryl/scripts/check.sh` verify the baseline. No training/model/provider capability is implied by a working fixture.

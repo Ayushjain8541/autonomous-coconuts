@@ -18,3 +18,8 @@ dist/
 .venv/
 __pycache__/
 *.pyc
+
+.beryl/agent/session-state.md
+
+# Local Beryl update backups and analysis artifacts
+.beryl/.updates/

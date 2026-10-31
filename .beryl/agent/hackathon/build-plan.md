@@ -15,7 +15,7 @@ contracts/           P2: shared JSON examples and eventual validation schema
   hackathon/archive/ earlier Airbus #2 exploration
 ```
 
-Only context files and fixtures exist in this revision; these app prefixes are planned ownership scopes. Create local folder guidance when the implementation's actual modules justify it. Do not create empty architectural layers or pretend there is a Beryl runtime.
+A replaceable Python/browser baseline now exists in these scopes, with local agent instructions. Beryl standard is actually installed. Read integrations.md and handoffs/bootstrap.md for observed evidence. Product ML/CSV/LLM/full-UI work remains separate.
 
 ## Dependency graph
 
@@ -38,7 +38,7 @@ P1 can progress without a model/provider by using the synthetic fixture with vis
 - P2/P3 select the simplest model adapter packaging; the logical JSON request/response in contracts.md remains the integration boundary. A local Python callable is the suggested low-overhead option, not a requirement.
 - P1/P2 confirm the v1 HTTP contract before wiring. Internal framework choice does not require a new product interview.
 - P2 chooses an LLM provider using actual available authorized access and records a redacted representative-call result. No provider or credits are assumed. Missing provider access leaves insights explicitly unavailable while numeric analysis remains functional.
-- P4 coordinates one shared baseline and real setup instructions once the owners' commands exist. Install Beryl only through a reviewed real installer if the team chooses it; handwritten docs are not an installation.
+- P4 maintains the verified bootstrap setup instructions. Real Beryl standard is installed via reviewed pinned upstream installer; future updates preserve project context and use its lifecycle.
 
 ## Current readiness and blockers
 
@@ -47,8 +47,8 @@ P1 can progress without a model/provider by using the synthetic fixture with vis
 | Shared product/roles/contracts | Context and synthetic examples prepared | All owners coordinate interface amendments |
 | Test data | Local file inspected; raw file not committed | P3 obtains a local copy on their machine |
 | Training data | Not supplied/verified in this chat | P3 owns acquisition; P4 may claim supporting investigation |
-| Application runtime and setup | Not created | P1/P2 choose and document their actual setup |
-| Model/inference/rules | Not implemented | P3 |
+| Application runtime and setup | Python/browser fixture runnable; local instructions and real checks present | P1/P2 may replace stack while preserving shared boundaries |
+| Model/inference/rules | Authoritative tier function implemented/tested; prediction adapter explicitly unavailable | P3 trains and integrates the real model |
 | LLM access/integration | Not verified | P2 |
 | Accurate globe location | Not available from inspected fields | P1 uses labeled schematic unless credible extra input is provided |
 | 36h demo event | Synthetic fixture only | P1/P2 label mode; P3 must not count fixture results as evaluation |
@@ -60,4 +60,4 @@ Shared JSON examples parse and are internally consistent; this does not prove an
 
 ## Coordinator method record
 
-Used the requested hackathon-build skill, especially team/UI/contract guidance. Read Superpowers brainstorming and writing-plans, then applied the user's explicit shared-context/workflow-freedom override. No mandatory execution skill, exhaustive test script, separate per-subsystem plans or approval ceremony is required by this repository. This pass contains documentation and fixtures; no app implementation or deployment was performed.
+Used the requested hackathon-build skill, especially team/UI/contract guidance. Read Superpowers brainstorming and writing-plans, then applied the user's explicit shared-context/workflow-freedom override. No mandatory execution skill, exhaustive test script, separate per-subsystem plans or approval ceremony is required by this repository. The original context pass contained documentation/fixtures. A subsequent user-authorized bootstrap adds a runnable connectivity shell, genuine Beryl and checks; it does not complete product model/LLM work or deploy.

@@ -1,6 +1,6 @@
 # P3 — Model, prediction target and risk algorithm
 
-**Owner:** P3. **Suggested branch:** `p3/ml-algorithm`. **Scope:** `ml/`, model artifact/manifests, training/inference/feature transforms, deterministic classification, their checks and handoffs/P3.md. **Requirements:** A1-01/02/05; supports geometry/insights evidence. Role specification only; no training/inference is claimed.
+**Owner:** P3. **Suggested branch:** `p3/ml-algorithm`. **Scope:** `ml/`, model artifact/manifests, training/inference/feature transforms, deterministic classification, their checks and handoffs/P3.md. **Requirements:** A1-01/02/05; supports geometry/insights evidence. A tier implementation and unavailable adapter now exist; real training/inference remains this role's work.
 
 ## Read
 

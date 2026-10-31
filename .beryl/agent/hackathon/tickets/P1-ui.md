@@ -1,6 +1,6 @@
 # P1 — Operator UI
 
-**Owner:** P1. **Suggested branch:** `p1/ui`. **Scope:** `web/` and its UI-specific setup/dependencies/checks; `.beryl/agent/hackathon/handoffs/P1.md`. **Requirements:** A1-03/04, U-01/02; support evidence for A1-01/02/U-03. Role specification only; no implementation is claimed.
+**Owner:** P1. **Suggested branch:** `p1/ui`. **Scope:** `web/` and its UI-specific setup/dependencies/checks; `.beryl/agent/hackathon/handoffs/P1.md`. **Requirements:** A1-03/04, U-01/02; support evidence for A1-01/02/U-03. Full role outcome remains open; a replaceable bootstrap exists with local folder instructions and verified setup/check commands.
 
 ## Read
 

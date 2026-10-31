@@ -19,6 +19,25 @@ Ask your agent:
 
 Replace the role with yours. [Team entrypoint and role links](.beryl/agent/hackathon/README.md).
 
+## Run and check the bootstrap
+
+Requires Python 3.9+, Git and Bash. No dependency install or API key needed. Node is optional locally for the JS syntax check; CI includes it.
+
+```sh
+python3 backend/server.py --port 8000
+```
+
+Open `http://127.0.0.1:8000` and click **Load Demo**. In another terminal from the repo root:
+
+```sh
+python3 scripts/check.py
+./.beryl/scripts/check.sh
+```
+
+Local context: [web](web/docs/agent-context.md), [backend](backend/docs/agent-context.md), [ML](ml/docs/agent-context.md), [P4 docs](docs/agent-context.md), [contracts](contracts/docs/agent-context.md), [tests](tests/docs/agent-context.md). Each development folder also has an AGENTS.md discovery pointer. Source controls/setup are replaceable; preserve the shared contract when changing stacks.
+
+Beryl readiness is lock-backed and reports root AGENTS.md as an intentionally preserved external contract. Hooks are included but not enabled. Its upstream Apache-2.0 LICENSE/NOTICE and the coordinator's MIT attribution are preserved; future product licensing remains a team decision.
+
 ## Shared references
 
 - [Product and user journey](.beryl/agent/hackathon/product-brief.md)
@@ -29,6 +48,6 @@ Replace the role with yours. [Team entrypoint and role links](.beryl/agent/hacka
 - [Evaluation expectations](.beryl/agent/hackathon/evaluation.md)
 - [Data/source provenance](.beryl/agent/hackathon/evidence.md)
 
-This revision is **shared planning context plus clearly labeled JSON fixtures**. There is no application code, trained model, live LLM integration, deployment or runnable application setup yet. Owners add their actual setup/check commands and dependency locks alongside their implementation. No framework is imposed.
+Beryl standard is installed from pinned upstream source. The replaceable Python/browser fixture is runnable with no package install or API key. It proves connectivity and risk-rule behavior; trained prediction, CSV ingestion, live LLM and the finished console remain role-owned work. No final product framework is imposed.
 
 Original Airbus #2 brainstorming is [archived](.beryl/agent/hackathon/archive/airbus-2-ideas.md). The [coordinator skill](.agents/skills/hackathon-build/SKILL.md) is copied with its license in [third-party notices](THIRD_PARTY_NOTICES.md), subject to the user's workflow-freedom instruction in AGENTS.md. The team's product license remains undecided.

@@ -1,0 +1,7 @@
+html { font-family: system-ui, sans-serif; color-scheme: light dark; }
+body { margin: 0; }
+main { max-width: 64rem; margin: 2rem auto; padding: 0 1.25rem; }
+h1 { line-height: 1.15; }
+p { line-height: 1.6; }
+button { font: inherit; padding: .7rem 1rem; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 1rem; border: 1px solid GrayText; border-radius: .5rem; }

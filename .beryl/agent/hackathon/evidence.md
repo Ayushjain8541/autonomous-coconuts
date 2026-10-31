@@ -16,7 +16,7 @@ The CSV has no common absolute report timestamp and lacks complete epoch-tagged 
 
 ## Context/skill provenance
 
-[Hackathon coordinator](https://github.com/Ayushjain8541/hackathon-coordinator) revision `4e28870e3cd11808607e9751be574ea7465b7aeb`; complete skill copied locally, MIT attribution in THIRD_PARTY_NOTICES.md. Relevant ideation, team, execution, UI, bootstrap, capabilities and templates were read. No source utilities were run without inspection. No Beryl runtime/lock or companion scaffold has been installed.
+[Hackathon coordinator](https://github.com/Ayushjain8541/hackathon-coordinator) revision `4e28870e3cd11808607e9751be574ea7465b7aeb`; complete skill copied locally, MIT attribution in THIRD_PARTY_NOTICES.md. Relevant ideation, team, execution, UI, bootstrap, capabilities and templates were read. No source utilities were run without inspection. A later user-authorized bootstrap installed real Beryl standard from the pinned source; details are in integrations.md and the genuine .beryl/lock.json.
 
 Superpowers brainstorming and writing-plans instructions were read directly from installed plugin 7.0.1. The user then explicitly requested shared context without prescribing individuals' working methods. Team.md records that user-directed override; no strict compliance with overridden workflow gates is claimed. Each person may choose useful local skills.
 
@@ -26,4 +26,4 @@ Official implementation references consulted while considering optional stack ch
 
 Authenticated local gh/Git works; repository is private at observed kickoff. GitHub connector returned 404. No visibility/account settings changed. Preparation revisions were pushed/read back on main; actual current revision is obtained from Git, not assumed from this document.
 
-No model trained, provider call made, API key configured, application runtime created, deployment performed or live UI verified in this context-only pass. JSON examples are synthetic fixtures. Document/fixture consistency checks establish preparation quality only; owners must record actual implementation evidence in handoffs.
+No model trained, provider call made, API key configured or deployment performed. A subsequent authorized bootstrap creates a local fixture runtime; current checks/browser evidence are in handoffs/bootstrap.md. JSON examples are synthetic fixtures. Document/fixture consistency checks establish preparation quality only; owners must record actual implementation evidence in handoffs.

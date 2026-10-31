@@ -1,4 +1,4 @@
-"""Use the saved model to predict CSV risk values and write prediction_data.csv."""
+"""Use the saved model to predict CSV risk values and write data_prediction.csv."""
 
 import argparse
 import io
@@ -12,6 +12,7 @@ import pandas as pd
 
 
 ROOT = Path(__file__).resolve().parent
+DEFAULT_OUTPUT = ROOT / "data_prediction.csv"
 FEATURES = (
     "event_id", "time_to_tca", "miss_distance", "relative_speed",
     "relative_position_r", "relative_position_t", "relative_position_n",
@@ -147,7 +148,7 @@ def create_prediction_csv(
     source = Path(test_path) if test_path is not None else (
         ROOT / "test.csv" if (ROOT / "test.csv").is_file() else ROOT / "test_data.csv"
     )
-    destination = Path(output_path) if output_path is not None else ROOT / "prediction_data.csv"
+    destination = Path(output_path) if output_path is not None else DEFAULT_OUTPUT
     if source.resolve() == destination.resolve():
         raise ValueError("Prediction output must differ from the input CSV.")
     test_data = predict_dataframe(
@@ -161,7 +162,7 @@ def create_prediction_csv(
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, default=None)
-    parser.add_argument("--output", type=Path, default=ROOT / "prediction_data.csv")
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--artifacts", type=Path, default=ROOT / "artifacts")
     parser.add_argument("--distance-unit", choices=("m", "km"), default=None)
     args = parser.parse_args()

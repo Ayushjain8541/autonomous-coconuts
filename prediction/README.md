@@ -16,12 +16,12 @@ Or from this folder:
 ```
 
 The script reads this folder's `test.csv` if present, otherwise `test_data.csv`,
-and writes this folder's `prediction_data.csv`. Its default model files are in
+and writes this folder's `data_prediction.csv`. Its default model files are in
 this folder's `artifacts/`, regardless of the current working directory.
 For explicit paths, run from the repository root:
 
 ```bash
-.venv/bin/python prediction/predict.py --input prediction/test.csv --output prediction/prediction_data.csv
+.venv/bin/python prediction/predict.py --input prediction/test.csv --output prediction/data_prediction.csv
 ```
 
 The output preserves all input rows and telemetry, replaces `risk` with predicted

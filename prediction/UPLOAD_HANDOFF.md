@@ -23,7 +23,7 @@ From the repository root, with the prediction dependencies installed:
 
 Generated CSVs and supplied raw inputs are excluded from Git. Regenerate the
 export from your local input file, or obtain the generated file from its owner.
-The CLI's existing default output remains `prediction/prediction_data.csv`.
+The CLI's default output is `prediction/data_prediction.csv`.
 
 ## Connect your upload endpoint
 

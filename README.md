@@ -73,7 +73,7 @@ development/
 prediction/
   predict.py                       # Saved-model inference
   test_data.csv                    # Input (test.csv is also supported)
-  prediction_data.csv              # Output
+  data_prediction.csv              # Output
   artifacts/                       # Deployed model + encoding metadata
   requirements.txt
 .venv/                             # Lightweight prediction environment
@@ -90,7 +90,7 @@ when running from another directory. Explicit paths are relative to the current
 working directory:
 
 ```bash
-.venv/bin/python prediction/predict.py --input prediction/test.csv --output prediction/prediction_data.csv
+.venv/bin/python prediction/predict.py --input prediction/test.csv --output prediction/data_prediction.csv
 ```
 
 Run development tests or open the notebook:

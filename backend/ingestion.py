@@ -75,6 +75,8 @@ def parse_csv(raw, max_rows=MAX_REPORTS, max_bytes=MAX_UPLOAD_BYTES):
                         raise ValueError()
                     if (name in {'time_to_tca', 'miss_distance', 'relative_speed'} or '_sigma_' in name) and number < 0:
                         raise ValueError()
+                    if name == 'time_to_tca' and not math.isfinite(number * 24):
+                        raise ValueError()
                     if name == 'risk' and number > 0:
                         raise ValueError()
                     fields[name] = number

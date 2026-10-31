@@ -1,6 +1,6 @@
 # Shared interfaces v1 — proposed handshake
 
-**Contract owner: P2. Consumers: P1 and P3; verifier: P4.** These shapes and semantics let owners start independently. This is the shared v1 handshake. The bootstrap implements GET /api/demo and GET /api/health, plus explicit unavailable POST responses. The batch adapter exists but returns unavailable; the real upload/model/LLM behavior remains to implement. Producers/consumers may amend them together; update examples and affected handoffs in the same change. Internal architecture, framework, test runner and provider remain individual choices.
+**Contract owner: P2. Consumers: P1 and P3; verifier: P4.** These shapes and semantics let owners start independently. This is the shared v1 handshake. P2 implements validated multipart/raw CSV upload, retained analysis retrieval, demo/health/schema routes, CORS and bounded Anthropic insights. The public P3 adapter still determines whether trained predictions are available. See backend/README.md for exact current behavior. Producers/consumers may amend them together; update examples and affected handoffs in the same change. Internal architecture, framework, test runner and provider remain individual choices.
 
 ## HTTP boundary (P1 ↔ P2)
 
@@ -17,7 +17,7 @@ A single analysis is all-or-error for invalid required records in v1: do not sil
 
 ## AnalysisResult
 
-Canonical JSON examples: `contracts/fixtures/analysis-demo.json` and `contracts/fixtures/insights-demo.json` from repo root. These are interface examples, **not a validation schema or model outputs**. P2 supplies the actual schema/types once choosing a runtime; P1 derives matching client types and P3 coordinates adapter types.
+Canonical JSON examples: `contracts/fixtures/analysis-demo.json` and `contracts/fixtures/insights-demo.json` from repo root. The examples remain synthetic and are not model outputs. Machine-readable schemas now exist at contracts/analysis-v1.schema.json and contracts/insights-v1.schema.json and GET /api/schema; P1 can derive matching client types.
 
 | Field | Type / semantics |
 | --- | --- |
@@ -54,7 +54,7 @@ Logical interface, independent of transport/language:
 - `fields` uses the **original CSV column names and documented source units**; `event_id` is kept as an identity, source numeric values become numbers/null, `c_object_type` stays categorical text. `time_to_tca` stays **days** here. Do not pass normalized hours under the original name.
 - Shared v1 target: forecast the **final available reported log10(Pc) for an encounter**, using only reports created **at least 2 days before closest approach** (`time_to_tca >= 2`). When training/evaluating, use the final target only for events with a final report within 1 day of closest approach; record excluded counts. This is a source-report target, not observed collision occurrence. P3 owns model choice/features, but P2/P1 must use this same meaning.
 - P2 validates/parses/groups and assigns stable report IDs. P3 orders reports, selects only the allowed earlier window and owns feature selection/manifest plus unknown behavior. If no eligible earlier reports exist, prediction is unavailable; do not extrapolate a trained model to unsupported horizons silently. Original earlier reported risk can support a separately labeled baseline; later/final risk must never leak into inputs.
-- PredictionBatch: `model_version: string|null`, `feature_schema_version: string|null`, `predictions: [{event_id, predicted_pc, predicted_log10_pc, status, warnings}]`. Status is `ready` or `unavailable`. Exactly one response per requested unique event; unmatched, missing or duplicate output IDs are integration errors. A fixture is an explicit development adapter owned/labeled by P2, not an actual P3 model result.
+- PredictionBatch: `model_version: string|null`, `feature_schema_version: string|null`, `predictions: [{event_id, predicted_pc, predicted_log10_pc, status, warnings}]`. Status is `ready` or `unavailable`. Exactly one response per requested unique event; unmatched, missing or duplicate output IDs are integration errors. A fixture is an explicit development adapter owned/labeled by P2, not an actual P3 model result. Uploaded assessments additionally include prediction_report_ids for the actual >=2-day input window; report_ids/latest_report_id still describe all source reports/the displayed latest report.
 
 Second logical interface:
 
@@ -66,7 +66,7 @@ P3 owns the single authoritative rule implementation. P2 calls/adapts it, P1 ren
 
 Fields: `schema_version: "1.0"`, `analysis_id`, `status` (`ready`, `fixture`, `unavailable`), `items` (array), `warnings` (array). Each item has `event_id`, `summary` (string), `fact_refs` (array of `{event_id: string, field: string}` references), and `limitations` (array of strings).
 
-Each fact reference resolves an encounter by its exact event_id, then a field from this allowlist: `predicted_pc`, `reported_pc`, `miss_distance_m`, `relative_speed_mps`, `time_to_tca_hours`, `severity`, `flag_reasons`, `prediction_status`. Reference event_id must match its item event_id and exist in the same analysis. No array-position strings, arbitrary property paths or references to another analysis are accepted.
+Each fact reference resolves an encounter by its exact event_id, then a field from this allowlist: `predicted_pc`, `reported_pc`, `miss_distance_m`, `relative_speed_mps`, `time_to_tca_hours`, `severity`, `flag_reasons`, `prediction_status`, `geometry`. Reference event_id must match its item event_id and exist in the same analysis. No array-position strings, arbitrary property paths or references to another analysis are accepted.
 
 The LLM receives bounded structured facts and existing reason IDs, never authority to alter severity or create predictions. Validate event/fact references and output shape; reject unsupported claims rather than silently shipping them. Keep critical numbers in deterministic UI fields. A ready explanation is not a guarantee of truth: enforce grounding and show limits. Provider absence/failure/timeout yields unavailable with a useful message, and never hides deterministic results. P2 owns a bounded timeout/retry policy and records it with real latency evidence. Synthetic example explanations use status fixture.
 
@@ -75,3 +75,11 @@ The LLM receives bounded structured facts and existing reason IDs, never authori
 `{"error":{"code":"INVALID_CSV","message":"Missing required column: event_id","details":[{"row":null,"column":"event_id","reason":"required"}]}}`
 
 Stable codes: `INVALID_CSV`, `UNSUPPORTED_SCHEMA`, `UPLOAD_TOO_LARGE`, `MODEL_UNAVAILABLE`, `ANALYSIS_NOT_FOUND`, `UNKNOWN_EVENT`, `INSIGHTS_UNAVAILABLE`, `INTERNAL_ERROR`. Use HTTP 400/413/422 for actionable input errors, 404 for missing analysis, and 503 for an unavailable dependency when returning an error rather than an explicit unavailable result. No stack traces or secrets in UI messages. P2 settles exact status/code choices once and documents them for P1.
+
+## P2 implementation details (non-breaking v1 additions)
+
+GET /api/analyses/{id} retrieves retained results; GET /api/schema exposes schemas and limits. POST /api/analyses also accepts raw text/csv. Default upload limit is 64 MiB/100,000 reports, with exactly one multipart file field. Validation errors are HTTP 422 with up to 50 row/column details and total_errors; the entire CSV is rejected. Unsupported content type is 415; malformed requests 400; oversize 413; missing analyses 404; invalid model output 502; model-adapter exception 503. Additional stable error codes: INVALID_REQUEST, NOT_FOUND and ORIGIN_NOT_ALLOWED.
+
+Insight provider failures/missing key return HTTP 200 with status unavailable and warnings, preserving numeric analysis. Bad analysis/event/body is still an HTTP error. Anthropic selects supported observation codes; the backend validates and renders text/fact references from saved results. It does not accept arbitrary model-authored numeric/safety prose. Ten event IDs/request, 25s default timeout, two concurrent calls, no automatic retries, successful cache for ten minutes. The configured provider is Anthropic; credentials stay in ignored local env files.
+
+Analyses are retained in memory for one hour, maximum 32, with copy isolation and unique IDs for each Load Demo. Restart loses analysis IDs. Latest-time ties choose the last CSV record and emit a warning. Forecast inputs are filtered to >=2 days at the P2 boundary; later reports remain source evidence. P3 must still supply the real trained predictor; the backend does not fake its output.

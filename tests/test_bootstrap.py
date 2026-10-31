@@ -4,6 +4,8 @@ import unittest
 import urllib.error
 import urllib.request
 from backend.server import make_server
+from backend.config import Settings
+from backend.insights import AnthropicClient, InsightsService
 from ml.predictor import predict_batch
 from ml.rules import classify_encounter
 
@@ -46,7 +48,7 @@ class RuleTests(unittest.TestCase):
 class HTTPTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.server = make_server(port=0)
+        cls.server = make_server(port=0, settings_loader=lambda: Settings(), insights_service=InsightsService(client_factory=lambda: AnthropicClient('', 'test')))
         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
         cls.thread.start()
         cls.base = "http://127.0.0.1:%s" % cls.server.server_port
@@ -86,15 +88,21 @@ class HTTPTests(unittest.TestCase):
                     self.get(path)
                 self.assertEqual(error.exception.code, 404)
 
-    def test_unimplemented_integrations_are_not_fake_successes(self):
-        for path, expected in [("/api/analyses", "MODEL_UNAVAILABLE"),
-                                ("/api/analyses/demo/insights", "INSIGHTS_UNAVAILABLE")]:
-            req = urllib.request.Request(self.base + path, data=b"{}", headers={"Content-Type": "application/json"})
-            with self.subTest(path=path):
-                with self.assertRaises(urllib.error.HTTPError) as error:
-                    urllib.request.urlopen(req, timeout=3)
-                self.assertEqual(error.exception.code, 503)
-                self.assertEqual(json.load(error.exception)["error"]["code"], expected)
+    def test_missing_model_and_key_are_explicit_after_real_upload(self):
+        csv = b'event_id,time_to_tca,miss_distance,risk\na,2,800,-4\n'
+        req = urllib.request.Request(self.base + '/api/analyses', data=csv, headers={'Content-Type': 'text/csv'})
+        with urllib.request.urlopen(req, timeout=3) as response:
+            data = json.load(response)
+        self.assertEqual(data['model']['status'], 'unavailable')
+        self.assertIsNone(data['encounters'][0]['predicted_pc'])
+        self.assertEqual(data['encounters'][0]['reported_pc'], 1e-4)
+        req = urllib.request.Request(self.base + '/api/analyses/' + data['analysis_id'] + '/insights',
+                                     data=b'{"event_ids":["a"]}', headers={'Content-Type': 'application/json'})
+        with urllib.request.urlopen(req, timeout=3) as response:
+            insights = json.load(response)
+        self.assertEqual(insights['status'], 'unavailable')
+        self.assertEqual(insights['items'], [])
+
 
 
 if __name__ == "__main__":

@@ -57,3 +57,7 @@ class IngestionTests(unittest.TestCase):
             with self.subTest(raw=raw):
                 with self.assertRaises(CSVError):
                     parse_csv(raw)
+
+    def test_time_that_overflows_normalized_hours_is_rejected(self):
+        with self.assertRaises(CSVError):
+            parse_csv(b'event_id,time_to_tca,miss_distance\na,1e308,800\n')

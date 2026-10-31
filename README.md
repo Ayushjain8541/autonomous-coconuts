@@ -36,7 +36,7 @@ Upload a CSV or open the labeled demo. The application groups reports by encount
 
 ## Inside the console
 
-### A clear view of what needs attention
+### A clear view of what deserves attention
 
 ![Encounter dashboard with a 36-hour critical alert, risk filters and interactive Earth](docs/screenshots/dashboard.png)
 

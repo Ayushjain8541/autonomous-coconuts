@@ -3,6 +3,8 @@
 import numpy as np
 import pandas as pd
 import pytest
+import importlib.util
+from pathlib import Path
 
 from collision_risk import (
     CRITICAL,
@@ -17,6 +19,7 @@ from collision_risk import (
     fit_final_model,
     latest_event_predictions,
     load_test_data,
+    save_artifacts,
     split_events,
 )
 from xgboost import XGBRegressor
@@ -346,3 +349,45 @@ def test_real_xgboost_save_load_inference_smoke(tmp_path, telemetry):
     pd.testing.assert_frame_equal(actual, expected)
     assert np.isfinite(actual["predicted_risk"]).all()
     assert actual["predicted_risk"].le(0).all()
+
+
+@pytest.mark.parametrize("distance_unit", ["m", "km"])
+def test_training_artifacts_are_compatible_with_prediction_workflow(
+    tmp_path, telemetry, distance_unit
+):
+    """The two exported model files must be sufficient for production inference."""
+    inference_path = Path(__file__).resolve().parents[2] / "prediction" / "predict.py"
+    specification = importlib.util.spec_from_file_location("prediction_workflow", inference_path)
+    inference = importlib.util.module_from_spec(specification)
+    specification.loader.exec_module(inference)
+
+    inputs = telemetry.reset_index(drop=True).copy()
+    if distance_unit == "km":
+        inputs["miss_distance"] /= 1000.0
+    train = pd.concat([inputs] * 8, ignore_index=True)
+    train["risk"] = np.tile([-8.0, -5.0, -3.0, -10.0], 8)
+    config = TrainingConfig(max_estimators=3, n_jobs=1, max_depth=2,
+                            distance_unit=distance_unit)
+    model, encoder = fit_final_model(train, config, best_rounds=3)
+    expected = dashboard_predictions(model, encoder, inputs, distance_unit=distance_unit)
+    directory = tmp_path / "models"
+    save_artifacts(directory, model, encoder, expected,
+                   latest_event_predictions(expected, inputs), {}, config)
+    # Production receives only the model and its encoding metadata.
+    for path in directory.iterdir():
+        if path.name not in {"collision_risk_model.ubj", "feature_encoder.json"}:
+            path.unlink()
+    source = tmp_path / "test.csv"
+    inputs.assign(risk=999.0, max_risk_estimate=999.0, max_risk_scaling=999.0).to_csv(
+        source, index=False
+    )
+    original = source.read_bytes()
+    result = inference.create_prediction_csv(
+        source, tmp_path / "prediction_data.csv", artifact_dir=directory
+    )
+    np.testing.assert_array_equal(result["risk"], expected["predicted_risk"])
+    assert result["class_model"].tolist() == expected["risk_tier"].replace({
+        CRITICAL: "Critical"
+    }).tolist()
+    assert not {"max_risk_estimate", "max_risk_scaling"}.intersection(result.columns)
+    assert source.read_bytes() == original

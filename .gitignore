@@ -1,8 +1,9 @@
 .venv/
 __pycache__/
+.DS_Store
+prediction_data.csv
 .pytest_cache/
 .ipynb_checkpoints/
 .jupyter/
 .cache/
-artifacts/
-.DS_Store
+development/artifacts/

@@ -1,7 +1,9 @@
 """Execute and save the development notebook with this Python interpreter."""
 
 from pathlib import Path
+import argparse
 import os
+import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parent
@@ -18,7 +20,9 @@ for name, suffix in (
 
 # A project-local runtime can be used on Macs without a system OpenMP package.
 # Set the search path before launching the child Python kernel.
-local_openmp = ROOT / ".venv/runtime/lib"
+local_openmp = ROOT.parent / ".venv/runtime/lib"
+if (ROOT / ".venv/runtime/lib/libomp.dylib").is_file():
+    local_openmp = ROOT / ".venv/runtime/lib"
 system_openmp = (
     Path("/usr/local/opt/libomp/lib/libomp.dylib"),
     Path("/opt/homebrew/opt/libomp/lib/libomp.dylib"),
@@ -34,7 +38,13 @@ from jupyter_client import KernelManager
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--lab", action="store_true", help="Open the notebook in JupyterLab.")
+    args = parser.parse_args()
     path = ROOT / "collision_risk_development.ipynb"
+    if args.lab:
+        subprocess.run([sys.executable, "-m", "jupyterlab", str(path)], cwd=ROOT, check=True)
+        return
     notebook = nbformat.read(path, as_version=4)
     nbformat.validate(notebook)
     manager = KernelManager(kernel_name="python3")

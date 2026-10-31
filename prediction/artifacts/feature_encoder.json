@@ -1,0 +1,42 @@
+{
+  "features": [
+    "event_id",
+    "time_to_tca",
+    "miss_distance",
+    "relative_speed",
+    "relative_position_r",
+    "relative_position_t",
+    "relative_position_n",
+    "c_object_type",
+    "c_sigma_r",
+    "t_sigma_r",
+    "F10",
+    "AP"
+  ],
+  "object_type_categories": [
+    "DEBRIS",
+    "PAYLOAD",
+    "ROCKET BODY",
+    "TBA",
+    "UNKNOWN"
+  ],
+  "output_columns": [
+    "event_id",
+    "time_to_tca",
+    "miss_distance",
+    "relative_speed",
+    "relative_position_r",
+    "relative_position_t",
+    "relative_position_n",
+    "c_sigma_r",
+    "t_sigma_r",
+    "F10",
+    "AP",
+    "c_object_type_DEBRIS",
+    "c_object_type_PAYLOAD",
+    "c_object_type_ROCKET BODY",
+    "c_object_type_TBA",
+    "c_object_type_UNKNOWN"
+  ],
+  "distance_unit": "m"
+}

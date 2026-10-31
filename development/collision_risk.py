@@ -11,7 +11,18 @@ from dataclasses import asdict, dataclass
 import json
 import os
 from pathlib import Path
+import sys
 from typing import Any
+
+ROOT = Path(__file__).resolve().parent
+# Load the existing workspace runtime before importing either ML framework.
+if sys.platform == "darwin":
+    import ctypes
+    for base in (ROOT, ROOT.parent):
+        runtime = base / ".venv/runtime/lib/libomp.dylib"
+        if runtime.is_file():
+            ctypes.CDLL(str(runtime), mode=ctypes.RTLD_GLOBAL)
+            break
 
 import numpy as np
 import pandas as pd
@@ -140,12 +151,13 @@ class FeatureEncoder:
     def fit_transform(self, frame: pd.DataFrame) -> pd.DataFrame:
         return self.fit(frame).transform(frame)
 
-    def save(self, path: str | Path) -> None:
+    def save(self, path: str | Path, *, distance_unit: str = "m") -> None:
         """Save portable, inspectable encoding metadata instead of a pickle."""
         Path(path).write_text(json.dumps({
             "features": list(FEATURES),
             "object_type_categories": self.one_hot_.categories_[0].tolist(),
             "output_columns": self.output_columns_,
+            "distance_unit": distance_unit,
         }, indent=2) + "\n")
 
     @classmethod
@@ -379,7 +391,7 @@ def save_artifacts(
     dashboard.to_csv(directory / "dashboard_predictions.csv", index=False)
     latest.to_csv(directory / "dashboard_latest_events.csv", index=False)
     model.save_model(directory / "collision_risk_model.ubj")
-    encoder.save(directory / "feature_encoder.json")
+    encoder.save(directory / "feature_encoder.json", distance_unit=config.distance_unit)
     report = {
         "target": "risk = log10(Pc), per telemetry row",
         "distance_unit": config.distance_unit,
@@ -390,9 +402,9 @@ def save_artifacts(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--train", type=Path, default=Path("train_data.csv"))
-    parser.add_argument("--test", type=Path, default=Path("test_data.csv"))
-    parser.add_argument("--output-dir", type=Path, default=Path("artifacts"))
+    parser.add_argument("--train", type=Path, default=ROOT / "train_data.csv")
+    parser.add_argument("--test", type=Path, default=ROOT.parent / "prediction/test_data.csv")
+    parser.add_argument("--output-dir", type=Path, default=ROOT / "artifacts")
     parser.add_argument("--distance-unit", choices=("m", "km"), default="m")
     parser.add_argument("--max-estimators", type=int, default=1600)
     parser.add_argument("--n-jobs", type=int, default=min(8, os.cpu_count() or 1))

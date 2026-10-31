@@ -48,7 +48,9 @@ def parse_csv(raw, max_rows=MAX_REPORTS, max_bytes=MAX_UPLOAD_BYTES):
         if len(errors) < 50:
             errors.append({'row': row, 'column': column, 'reason': reason})
     try:
-        for row_number, record in enumerate(reader, start=2):
+        for record in reader:
+            # Physical end line: includes skipped blank lines and quoted newlines.
+            row_number = reader.line_num
             count += 1
             if count > max_rows:
                 raise CSVError('CSV exceeds the report-count limit.', code='UPLOAD_TOO_LARGE')

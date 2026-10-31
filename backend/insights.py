@@ -1,7 +1,9 @@
 """Bounded Anthropic observation selection with server-validated factual rendering."""
 import copy
 import hashlib
+import http.client
 import json
+import multiprocessing
 import threading
 import time
 import urllib.error
@@ -34,6 +36,63 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
+def _http_worker(url, data, headers, timeout, channel):
+    """Keep blocking DNS/header/body operations in a terminable worker."""
+    try:
+        request = urllib.request.Request(url, data=data, headers=headers, method='POST')
+        with urllib.request.build_opener(_NoRedirect()).open(request, timeout=timeout) as response:
+            raw = response.read(1024 * 1024 + 1)
+        channel.send((True, raw))
+    except urllib.error.HTTPError as error:
+        if error.code in {401, 403}:
+            message = 'Anthropic rejected the credential or model access. Check your local settings.'
+        elif error.code == 429:
+            message = 'Anthropic rate limit reached. Retry explicitly later; numeric analysis is still available.'
+        else:
+            message = 'Anthropic request failed. Check model access and provider availability.'
+        error.close()
+        channel.send((False, message))
+    except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException):
+        channel.send((False, 'Anthropic timed out or could not be reached. Numeric analysis is still available.'))
+    except Exception:
+        channel.send((False, 'Anthropic transport failed. Numeric analysis is still available.'))
+    finally:
+        channel.close()
+
+
+def _bounded_provider_read(request, timeout):
+    # Socket timeouts reset after each read. A spawned process gives the whole
+    # exchange a real deadline and lets us stop DNS or slow headers/body too.
+    context = multiprocessing.get_context('spawn')
+    receive, send = context.Pipe(duplex=False)
+    worker = context.Process(target=_http_worker, args=(request.full_url, request.data,
+        dict(request.header_items()), timeout, send), daemon=True)
+    deadline = time.monotonic() + timeout
+    try:
+        worker.start()
+        send.close()
+        remaining = deadline - time.monotonic()
+        if remaining <= 0 or not receive.poll(remaining):
+            raise ProviderError('Anthropic timed out. Numeric analysis is still available.')
+        success, value = receive.recv()
+        if not success:
+            raise ProviderError(value)
+        return value
+    except (EOFError, OSError, RuntimeError):
+        raise ProviderError('Anthropic transport failed. Numeric analysis is still available.') from None
+    finally:
+        receive.close()
+        send.close()
+        if worker.pid is not None:
+            if worker.is_alive():
+                worker.terminate()
+            worker.join(timeout=.2)
+            if worker.is_alive():
+                worker.kill()
+                worker.join(timeout=.2)
+            worker.close()
+
+
 class AnthropicClient:
     def __init__(self, api_key, model, timeout=25, base_url='https://api.anthropic.com'):
         self._api_key, self.model, self.timeout = api_key, model, timeout
@@ -51,9 +110,7 @@ class AnthropicClient:
                                          headers={'Content-Type': 'application/json', 'x-api-key': self._api_key,
                                                   'anthropic-version': '2023-06-01'}, method='POST')
         try:
-            opener = urllib.request.build_opener(_NoRedirect())
-            with opener.open(request, timeout=self.timeout) as response:
-                raw = response.read(1024 * 1024 + 1)
+            raw = _bounded_provider_read(request, self.timeout)
             if len(raw) > 1024 * 1024:
                 raise ProviderError('Anthropic response exceeded the response limit.')
             message = json.loads(raw)
@@ -61,14 +118,6 @@ class AnthropicClient:
                 raise ProviderError('Anthropic did not return a complete supported explanation.')
             text = ''.join(x.get('text', '') for x in message.get('content', []) if x.get('type') == 'text')
             return json.loads(text)
-        except urllib.error.HTTPError as error:
-            if error.code in {401, 403}:
-                raise ProviderError('Anthropic rejected the credential or model access. Check your local settings.') from None
-            if error.code == 429:
-                raise ProviderError('Anthropic rate limit reached. Retry explicitly later; numeric analysis is still available.') from None
-            raise ProviderError('Anthropic request failed. Check model access and provider availability.') from None
-        except (urllib.error.URLError, TimeoutError, OSError):
-            raise ProviderError('Anthropic timed out or could not be reached. Numeric analysis is still available.') from None
         except (ValueError, TypeError, KeyError, AttributeError) as error:
             if isinstance(error, ProviderError):
                 raise

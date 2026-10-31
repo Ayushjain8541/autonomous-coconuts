@@ -53,11 +53,15 @@ Vite-style development clients can use http://127.0.0.1:8000 as API base, or pro
 
 64 MiB CSV; 100,000 reports; exactly one multipart file. UTF-8 (BOM supported), unique headers, finite/range-checked numbers and required event_id/time_to_tca/miss_distance. Invalid required input rejects the entire CSV with up to 50 row/column errors and total_errors; no silent row drops. Empty optional numbers are null. Extra/missing cells and ambiguous headers are rejected.
 
+Error rows and `row-N` report IDs use the physical line where the CSV record ends. Blank lines count; quoted multiline records use their final line.
+
 Reports are grouped by preserved string event_id. Displayed latest report is minimum time_to_tca; ties choose the last CSV record with a visible warning. Source times stay days at the ML boundary and become hours in the API. The P3 input window contains only reports at least 2 days before TCA. Later records remain source evidence but never become forecast inputs. prediction_report_ids identifies the actual earlier window; report_ids/latest_report_id identify the source view.
 
 The source-provided miss_distance is a prediction at TCA, not current measured distance. Reported Pc remains separate from model-predicted Pc. An unavailable model yields null predicted Pc, explicit warnings and `unknown` unless a known critical distance criterion independently triggers. A pass-through of reported risk is never presented as a trained forecast.
 
 Storage is in memory: 32 analyses, one-hour TTL, discarded on restart. Insight cache: 64 successful selections for ten minutes, isolated by analysis/event selection/model/credential identity. Missing credentials and failures are not cached. At most two provider calls are in flight, ten events per request, 2,048 output tokens and zero automatic retries.
+
+Each provider call runs in a short-lived spawned Python worker with an overall deadline, including connection, headers and body. The backend terminates timed-out work before releasing its concurrency slot (plus at most 0.4 seconds of bounded process cleanup). This prevents slow-drip responses from extending socket timeouts indefinitely. Deployment runtimes must support Python child processes; the documented local CLI does. Truncated/failed transport returns unavailable insights and leaves the analysis retrievable.
 
 ## Grounding design
 

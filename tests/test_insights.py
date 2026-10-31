@@ -1,6 +1,7 @@
 import json
 import tempfile
 import threading
+import time
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -16,6 +17,17 @@ class ProviderHandler(BaseHTTPRequestHandler):
         packet = json.loads(request['messages'][0]['content'])
         self.server.last_packet = packet
         mode = self.server.mode
+        if mode == 'truncated':
+            self.send_response(200);self.send_header('Transfer-Encoding','chunked');self.end_headers()
+            self.wfile.write(b'20\r\n{}');self.wfile.flush();self.close_connection=True;return
+        if mode == 'slow_headers':
+            try:
+                self.wfile.write(b'HTTP/1.0 200 OK\r\nX-Slow: ');self.wfile.flush()
+                for _ in range(6):
+                    time.sleep(.2);self.wfile.write(b'x');self.wfile.flush()
+                self.wfile.write(b'\r\n\r\n{}');self.wfile.flush()
+            except OSError:pass
+            self.close_connection=True;return
         if mode == 'error':
             self.send_response(429);self.end_headers();return
         if mode == 'bad':
@@ -26,7 +38,14 @@ class ProviderHandler(BaseHTTPRequestHandler):
                     'content': [{'type': 'text', 'text': json.dumps(result)}],
                     'stop_reason': 'refusal' if mode == 'refusal' else 'end_turn',
                     'usage': {'input_tokens': 1, 'output_tokens': 1}}
-        raw = json.dumps(response).encode();self.send_response(200);self.send_header('Content-Length',str(len(raw)));self.end_headers();self.wfile.write(raw)
+        raw = json.dumps(response).encode();self.send_response(200);self.send_header('Content-Length',str(len(raw)));self.end_headers()
+        try:
+            if mode == 'slow':
+                chunk_size=(len(raw)+5)//6
+                for offset in range(0,len(raw),chunk_size):
+                    time.sleep(.2);self.wfile.write(raw[offset:offset+chunk_size]);self.wfile.flush()
+            else:self.wfile.write(raw)
+        except OSError:pass
     def log_message(self,*args):pass
 
 
@@ -61,6 +80,19 @@ class InsightsTests(unittest.TestCase):
     def test_cache_avoids_duplicate_paid_requests(self):
         self.service.generate(self.analysis,self.ids);self.service.generate(self.analysis,self.ids)
         self.assertEqual(len(self.provider.requests),1)
+
+    def test_overall_deadline_bounds_slow_headers_and_body_and_releases_capacity(self):
+        self.client.timeout=.5
+        for mode in ['slow','slow_headers','slow']:
+            with self.subTest(mode=mode):
+                self.provider.mode=mode
+                started=time.monotonic()
+                result=self.service.generate(AnalysisService().demo(),self.ids)
+                self.assertEqual(result['status'],'unavailable')
+                self.assertLess(time.monotonic()-started,.9)
+                self.assertTrue(any('timed out' in x for x in result['warnings']))
+        self.provider.mode='good';self.client.timeout=2
+        self.assertEqual(self.service.generate(self.analysis,self.ids)['status'],'ready')
 
     def test_provider_failure_refusal_and_unsupported_claim_are_unavailable(self):
         for mode in ['error','refusal','bad']:

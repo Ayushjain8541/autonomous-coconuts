@@ -104,6 +104,17 @@ class P2HTTPTests(unittest.TestCase):
             self.assertEqual(result['items'][0]['event_id'],'a')
             self.assertIn('critical',result['items'][0]['summary'])
             self.assertEqual(result['items'][0]['fact_refs'][0]['event_id'],'a')
+            provider.mode='truncated'
+            with urllib.request.urlopen(upload,timeout=3) as response: second=json.load(response)
+            request=urllib.request.Request(base+'/api/analyses/'+second['analysis_id']+'/insights',
+                data=b'{"event_ids":["a"]}',headers={'Content-Type':'application/json'})
+            with urllib.request.urlopen(request,timeout=3) as response:
+                self.assertEqual(response.status,200)
+                unavailable=json.load(response)
+            self.assertEqual(unavailable['status'],'unavailable')
+            self.assertEqual(unavailable['items'],[])
+            with urllib.request.urlopen(base+'/api/analyses/'+second['analysis_id'],timeout=3) as response:
+                self.assertEqual(json.load(response),second)
         finally:
             api.shutdown();api.server_close();api_thread.join(timeout=2)
             provider.shutdown();provider.server_close();thread.join(timeout=2)

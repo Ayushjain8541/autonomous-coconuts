@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-31T04:00:00Z",
+  "title": "Design System: Earth",
+  "extensions": {
+    "shadows": [
+      {
+        "name": "panel",
+        "value": "0 10px 36px #0006",
+        "purpose": "Separate help from Earth."
+      }
+    ],
+    "motion": [
+      {
+        "name": "reset",
+        "value": "1.1s",
+        "purpose": "Camera reset; zero for reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact",
+        "value": "600px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Globe control",
+      "kind": "button",
+      "description": "Accessible 44px icon control.",
+      "html": "<button class=\"ds-control\" aria-label=\"Zoom in\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"><path d=\"M12 5v14M5 12h14\"/></svg></button>",
+      "css": ".ds-control{display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:10px;background:#151b23;color:#e3eaf0;cursor:pointer}.ds-control:hover{background:#2c3743}.ds-control:focus-visible{outline:2px solid #a6d8ff;outline-offset:4px}.ds-control:active{background:#3a4858}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Earth leads.",
+    "overview": "A realistic interactive Earth with satellite detail. Quiet controls preserve the visual priority of the globe.",
+    "keyCharacteristics": [
+      "Real imagery",
+      "Dark space",
+      "Minimal controls"
+    ],
+    "dos": [
+      "Preserve visible attribution and keyboard controls."
+    ],
+    "donts": [
+      "Do not add decorative stars, marketing cards or auto-spin."
+    ]
+  }
+}

@@ -94,7 +94,7 @@ def render_pdf(report):
     for i,event_id in enumerate(report['coverage']['included_event_ids']):
         fact=report['facts'];prefix='event.%s.'%i
         baseline={field:fact[prefix+field]['value'] for field in ['predicted_pc','reported_pc','miss_distance_m','severity','time_to_tca_hours']}
-        body.append(p(event_id,'h2'))
+        body.append(p('Encounter '+event_id,'h2'))
         tier='NEEDS ASSESSMENT' if baseline['severity']=='unknown' else baseline['severity'].upper()
         body.append(p('Assessment: %s | Estimated Pc %s | Predicted separation %s m | Closest approach in %s h from the report reference'%(tier,number(baseline['predicted_pc']),number(baseline['miss_distance_m']),number(baseline['time_to_tca_hours']))))
         body.append(p('Pc in the source report: '+number(baseline['reported_pc']) if baseline['reported_pc'] is not None else 'No source Pc was provided for comparison.','small'))
@@ -104,7 +104,6 @@ def render_pdf(report):
             body.extend([p(item['assessment']['text']),evidence(item['assessment'])])
             for action in item['actions']:
                 body.append(Paragraph('<b>'+escape(plain(action['label']))+'</b>: '+escape(plain(action['rationale']['text'])),styles['body']))
-                body.append(evidence(action['rationale']))
         rows=[[p(x,'cell') for x in ['If estimates changed','Estimated Pc','Separation (m)','Assessment']]]
         rows.append([p(x,'cell') for x in ['Current assessment',number(baseline['predicted_pc']),number(baseline['miss_distance_m']),tier.title()]])
         names={'pc_lower':'Lower Pc estimate (x 0.1)','distance_larger':'Greater separation (x 2)','combined':'Both changes together'}
@@ -116,7 +115,7 @@ def render_pdf(report):
         table.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0),pale),('LINEBELOW',(0,0),(-1,0),.7,line),
             ('LINEBELOW',(0,1),(-1,-1),.3,line),('VALIGN',(0,0),(-1,-1),'TOP'),
             ('TOPPADDING',(0,0),(-1,-1),6),('BOTTOMPADDING',(0,0),(-1,-1),6)]))
-        body.extend([Spacer(1,5),KeepTogether([table]),Spacer(1,9)])
+        body.extend([Spacer(1,5),KeepTogether([p('Scenario comparisons for encounter '+event_id,'small'),table]),Spacer(1,9)])
     if report['what_if_summary']:
         body.extend([p('Implications for the review','h1'),p(report['what_if_summary']['text']),evidence(report['what_if_summary'])])
     body.append(p('Planning notes and report details','h1'))

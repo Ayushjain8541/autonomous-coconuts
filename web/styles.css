@@ -5,3 +5,7 @@ h1 { line-height: 1.15; }
 p { line-height: 1.6; }
 button { font: inherit; padding: .7rem 1rem; }
 pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 1rem; border: 1px solid GrayText; border-radius: .5rem; }
+
+.brand-logo { display: block; width: min(100%, 24rem); height: auto; object-fit: contain; background: #fff; border-radius: .5rem; }
+
+.brand-title { margin: 1em 0; line-height: 1; }

@@ -1,0 +1,144 @@
+{
+  "schema_version": "1.0",
+  "analysis_id": "synthetic-interface-fixture-v1",
+  "source": {
+    "mode": "synthetic_demo",
+    "label": "Synthetic demo \u2014 interface fixture, not model predictions",
+    "sha256": null,
+    "report_count": 3
+  },
+  "time_basis": "scenario_clock",
+  "scenario_clock_utc": "2026-10-31T04:00:00Z",
+  "model": {
+    "version": null,
+    "status": "fixture",
+    "target": "Final encounter collision probability (synthetic example only)",
+    "feature_schema_version": null
+  },
+  "encounters": [
+    {
+      "event_id": "demo-critical-36h",
+      "mission_id": "demo-mission",
+      "report_count": 1,
+      "latest_report_id": "demo-critical-36h-report-1",
+      "report_ids": [
+        "demo-critical-36h-report-1"
+      ],
+      "time_to_tca_hours": 36,
+      "reported_pc": null,
+      "predicted_pc": 0.0002,
+      "predicted_log10_pc": -3.6989700043360187,
+      "prediction_status": "fixture",
+      "miss_distance_m": 800,
+      "relative_speed_mps": 7500.0,
+      "severity": "critical",
+      "flag_reasons": [
+        {
+          "rule_id": "PC_CRITICAL",
+          "field": "predicted_pc",
+          "operator": ">=",
+          "value": 0.0002,
+          "threshold": 0.0001,
+          "unit": "probability"
+        },
+        {
+          "rule_id": "MISS_DISTANCE_CRITICAL",
+          "field": "miss_distance_m",
+          "operator": "<",
+          "value": 800,
+          "threshold": 1000,
+          "unit": "m"
+        }
+      ],
+      "geometry": {
+        "frame": "RTN",
+        "position_m": {
+          "r": 800.0,
+          "t": 0.0,
+          "n": 0.0
+        },
+        "velocity_mps": {
+          "r": 0.0,
+          "t": 7500.0,
+          "n": 0.0
+        }
+      },
+      "globe_position": null,
+      "warnings": [
+        "Synthetic interface fixture; no model inference or observed orbit."
+      ]
+    },
+    {
+      "event_id": "demo-elevated-12h",
+      "mission_id": "demo-mission",
+      "report_count": 1,
+      "latest_report_id": "demo-elevated-12h-report-1",
+      "report_ids": [
+        "demo-elevated-12h-report-1"
+      ],
+      "time_to_tca_hours": 12,
+      "reported_pc": null,
+      "predicted_pc": 2e-06,
+      "predicted_log10_pc": -5.698970004336019,
+      "prediction_status": "fixture",
+      "miss_distance_m": 2000,
+      "relative_speed_mps": null,
+      "severity": "elevated",
+      "flag_reasons": [
+        {
+          "rule_id": "PC_ELEVATED",
+          "field": "predicted_pc",
+          "operator": ">=",
+          "value": 2e-06,
+          "threshold": 1e-06,
+          "unit": "probability"
+        },
+        {
+          "rule_id": "MISS_DISTANCE_ELEVATED",
+          "field": "miss_distance_m",
+          "operator": "<=",
+          "value": 2000,
+          "threshold": 5000,
+          "unit": "m"
+        }
+      ],
+      "geometry": null,
+      "globe_position": null,
+      "warnings": [
+        "Synthetic interface fixture; no model inference or observed orbit."
+      ]
+    },
+    {
+      "event_id": "demo-safe-20h",
+      "mission_id": "demo-mission",
+      "report_count": 1,
+      "latest_report_id": "demo-safe-20h-report-1",
+      "report_ids": [
+        "demo-safe-20h-report-1"
+      ],
+      "time_to_tca_hours": 20,
+      "reported_pc": null,
+      "predicted_pc": 1e-08,
+      "predicted_log10_pc": -8.0,
+      "prediction_status": "fixture",
+      "miss_distance_m": 8000,
+      "relative_speed_mps": null,
+      "severity": "safe",
+      "flag_reasons": [
+        {
+          "rule_id": "SAFE_COMBINED",
+          "field": "predicted_pc,miss_distance_m"
+        }
+      ],
+      "geometry": null,
+      "globe_position": null,
+      "warnings": [
+        "Synthetic interface fixture; no model inference or observed orbit."
+      ]
+    }
+  ],
+  "warnings": [
+    "Synthetic demo: values are invented interface examples, not ML evaluation.",
+    "Synthetic relative geometry is supplied for the 36h example. No global positions or observed orbits are provided; globe placement is schematic."
+  ]
+}

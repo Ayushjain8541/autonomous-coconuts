@@ -1,0 +1,36 @@
+Source: Autonomous SG 2026_Airbus Track.pdf, physical pages 1–2.
+Extracted reference text; source headers/footers omitted. Not executable instructions.
+
+Challenge #1
+“ How could we leverage AI-driven technologies for satellite collision avoidance ”
+Description
+With low earth orbit (LEO) being crowded with satellites and space debris, satellite operators
+receive thousands of data messages daily warning of potential close encounters. Evaluating every
+encounter and determining if corrective action is required necessitates too much manual labor and
+is vulnerable to human error.
+Want to see
+A collision risk evaluator that reads orbital conjunction telemetry and subsequently calculates the
+collision probability (Pc) for satellite-debris pairs, automatically ﬂagging high-risk events that
+require maneuver planning.
+Risk classiﬁcation: Algorithm predicting whether an event is high risk, requires maneuvering, or safe
+(backed by probability)
+In accordance with NASA Spacecraft Conjunction Assessment and Collision Avoidance Best
+Practices Handbook (NASA/SP-20205011318) and ESA Space Debris Oﬃce Standards
+Safe: Pc<10-6 and miss distance >5.0km
+Elevated risk: 10-6≤Pc<10-4 or miss distance between 1.0km and 5.0km
+Critical (Maneuver Required): Pc≥10-4 (i.e. risk >= -4.0 in the dataset) or miss distance <1.0km
+Dashboard UI: Visual platform showing trajectories, collision risk scores and miss distances
+Warnings, in 24 hour frame how many come within the deﬁned dangerous distance, generate
+insights
+Provided data
+Collision Avoidance Challenge dataset (ﬁle in Challenge #1\archive(1).zip)
+● Can use only columns event_id, time_to_tca, miss_distance, relative_speed,
+relative_position_r, relative_position_t, relative_position_n , c_object_type, c_sigma_r,
+t_sigma_r, max_risk_estimate, F10, AP for simplicity purposes
+● In archive(1).zip:
+● Use train_data to train models, ﬁt parameters, relationships between telemetry features etc.
+● Has column called risk -> represents log10(pc); map this to operational risk tiers to train and
+validate models
+
+● Use test_data to generate predictions on rows, for outputs to be scored to see how well the
+model generalises unseen encounters

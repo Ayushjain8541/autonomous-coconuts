@@ -1,5 +1,8 @@
 # CSV risk prediction
 
+Raw input CSVs are local files excluded from Git. Supply `development/train_data.csv`
+and `prediction/test_data.csv` at those paths before running their workflows.
+
 Run from the repository root:
 
 ```bash

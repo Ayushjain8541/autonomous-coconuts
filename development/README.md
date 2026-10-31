@@ -1,5 +1,8 @@
 # Model development and training
 
+Raw input CSVs are local files excluded from Git. Supply `development/train_data.csv`
+and `prediction/test_data.csv` at those paths before running their workflows.
+
 This folder contains the recovered training data, development notebook, reusable
 training code, and behavioral tests. The prediction workflow is in `../prediction/`.
 

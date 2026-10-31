@@ -17,6 +17,10 @@ class ProviderError(ValueError):
     pass
 
 
+class NumericClaimError(ProviderError):
+    pass
+
+
 def build_analysis_context(analysis):
     scenario = analysis['time_basis'] == 'scenario_clock'
     return {
@@ -56,6 +60,9 @@ def provider_context(context):
     result = dict(context)
     result['facts'] = {key: {'value': fact['value'], **({'unit': fact['unit']} if fact['unit'] else {})}
                        for key, fact in context['facts'].items()}
+    for key, fact in context['facts'].items():
+        if fact['field']=='time_to_tca_hours' and isinstance(fact['value'],(int,float)):
+            result['facts'][key]['display_value']='%.2f' % fact['value']
     return result
 
 
@@ -67,16 +74,16 @@ def reference_assessment(event):
     for reason in event['flag_reasons']:
         if reason.get('field') in labels and reason.get('operator') in operators:
             unit = ' m' if reason['field'] == 'miss_distance_m' else ''
-            parts.append('%s %.6g%s %s its %.6g%s criterion.' % (
+            parts.append('%s %.8g%s %s its %.8g%s criterion.' % (
                 labels[reason['field']], reason['value'], unit, operators[reason['operator']], reason['threshold'], unit))
     if pc is None:
         parts.append('Predicted Pc is unavailable; it is not zero.')
     if not any(r.get('field') == 'miss_distance_m' for r in event['flag_reasons']):
-        parts.append('Predicted closest separation is %s.' % ('unavailable' if distance is None else '%.6g m' % distance))
+        parts.append('Predicted closest separation is %s.' % ('unavailable' if distance is None else '%.8g m' % distance))
     if event['severity'] == 'safe' and pc is not None:
-        parts.append('Estimated Pc is %.6g; this tier is not an operational clearance.' % pc)
+        parts.append('Estimated Pc is %.8g; this tier is not an operational clearance.' % pc)
     hours = event['time_to_tca_hours']
-    parts.append('Closest approach is %.6g hours from the reference, %s the 24-hour window.' % (hours, 'within' if hours <= 24 else 'outside'))
+    parts.append('Closest approach is %.8g hours from the reference, %s the 24-hour window.' % (hours, 'within' if hours <= 24 else 'outside'))
     return ' '.join(parts)
 
 
@@ -99,8 +106,9 @@ def event_evidence(event, prefix, facts):
         return key
     for field in ['severity', 'predicted_pc', 'reported_pc', 'prediction_status',
                   'miss_distance_m', 'relative_speed_mps', 'time_to_tca_hours']:
-        refs[field] = fact(prefix+'.'+field, event.get(field), field, units.get(field),
-                           [24] if field == 'time_to_tca_hours' else [])
+        value=event.get(field)
+        supporting=([24]+[round(value,2)] if isinstance(value,(int,float)) else [24]) if field=='time_to_tca_hours' else []
+        refs[field] = fact(prefix+'.'+field, value, field, units.get(field), supporting)
     geometry_available = geometry_availability(event)
     geometry_label = ('complete relative geometry' if all(geometry_available.values()) else
                       'partial relative geometry' if any(geometry_available.values()) else 'relative geometry unavailable')
@@ -152,6 +160,12 @@ def _statement(value,facts,event_id=None,limit=1000):
     if event_id is not None and any(facts[k]['event_id']!=event_id for k in refs):
         raise ProviderError('Explanation mixed evidence between encounters.')
     refs=list(refs)
+    # A finding citing every detailed encounter may state their supplied cohort
+    # count. This does not authorize other portfolio statistics or uncited events.
+    scopes={facts[k]['event_id'] for k in refs}
+    all_events={f['event_id'] for f in facts.values() if f['event_id'] is not None}
+    if event_id is None and len(scopes)>1 and scopes==all_events:
+        refs.extend(k for k,f in facts.items() if f['field']=='detailed_encounters' and k not in refs)
     allowed=[];numeric_text=text
     # Identity digits are not numeric claims. Strip identities before touching
     # any prose; severity words can themselves occur inside another event ID.
@@ -188,6 +202,6 @@ def _statement(value,facts,event_id=None,limit=1000):
                     numbers.append(value)
                     if (item['field'] in {'predicted_pc','reported_pc','what_if.assumed_pc'} or item.get('unit')=='probability'):numbers.append(value*100)
                 if any(math.isclose(number,x,rel_tol=1e-6,abs_tol=0) for x in numbers):matches.append(key)
-            if not matches:raise ProviderError('Explanation contained an unsupported numeric claim.')
+            if not matches:raise NumericClaimError('Explanation contained an unsupported numeric claim.')
             refs.extend(k for k in matches if k not in refs)
     return {'text':text.strip(),'fact_ids':list(dict.fromkeys(refs))}

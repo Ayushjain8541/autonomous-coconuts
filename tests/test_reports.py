@@ -89,6 +89,15 @@ class ReportTests(unittest.TestCase):
         self.assertNotIn('despite Pc',text)
         self.assertTrue(any('rewritten AI interpretation' in warning for warning in report['warnings']))
 
+    def test_unsupported_numeric_finding_is_replaced_transparently_with_source_facts(self):
+        def change(result):
+            result['key_findings'][0]={'text':'There are 987654 critical encounters.', 'fact_ids':['portfolio.critical']}
+        report=self.service(ReportClient(change)).generate(self.analysis)
+        self.assertEqual(report['status'],'ready')
+        self.assertNotIn('987654',report['key_findings'][0]['text'])
+        self.assertIn('portfolio.total',report['key_findings'][0]['fact_ids'])
+        self.assertTrue(any('replaced with the cited analysis facts' in w for w in report['warnings']))
+
     def test_policy_window_and_derived_scenario_values_are_supported_evidence(self):
         def change(result):
             result['executive_summary']={'text':'There are no critical encounters within 24 hours.', 'fact_ids':['portfolio.critical_within_24h']}

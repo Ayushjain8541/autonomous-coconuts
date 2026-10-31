@@ -9,10 +9,11 @@ from collections import OrderedDict
 from numbers import Real
 from pathlib import Path
 import ml
+from .model_adapter import predict_batch
 from .ingestion import parse_csv
 
 ROOT = Path(__file__).resolve().parents[1]
-TARGET = 'Final available reported log10(Pc), forecast from reports at least 2 days before TCA'
+TARGET = 'Per-report collision probability estimated from the latest telemetry report; not a final-TCA forecast'
 
 
 class AnalysisError(ValueError):
@@ -61,7 +62,7 @@ def _validate_predictions(batch, ids):
 
 class AnalysisService:
     def __init__(self, predictor=None, classifier=None, max_analyses=32, ttl_seconds=3600, clock=time.monotonic):
-        self.predictor = predictor or ml.predict_batch
+        self.predictor = predictor or predict_batch
         self.classifier = classifier or ml.classify_encounter
         self.max_analyses, self.ttl_seconds, self.clock = max_analyses, ttl_seconds, clock
         self._items, self._lock = OrderedDict(), threading.RLock()
@@ -97,9 +98,9 @@ class AnalysisService:
 
     def analyze(self, raw):
         parsed = parse_csv(raw)
-        eligible = [{'event_id': e['event_id'], 'reports': [r for r in e['reports'] if r['fields']['time_to_tca'] >= 2]}
+        eligible = [{'event_id': e['event_id'], 'reports': [min(e['reports'],
+                     key=lambda r: (r['fields']['time_to_tca'], -int(r['report_id'][4:])))]}
                     for e in parsed['events']]
-        eligible = [e for e in eligible if e['reports']]
         try:
             batch = self.predictor({'schema_version': '1.0', 'events': eligible})
         except Exception:
@@ -114,17 +115,14 @@ class AnalysisService:
             warnings = []
             if sum(r['fields']['time_to_tca'] == fields['time_to_tca'] for r in reports) > 1:
                 warnings.append('Multiple reports have the same latest time; the last CSV record is displayed. Source records are preserved.')
-            prediction = outputs.get(event['event_id'], {'status': 'unavailable', 'predicted_pc': None,
-                                                        'predicted_log10_pc': None, 'warnings': ['No reports at least 48h before TCA are available for this model.']})
+            prediction = outputs[event['event_id']]
             warnings.extend(prediction['warnings'])
             position = {k: fields.get('relative_position_' + k) for k in ['r', 't', 'n']}
             velocity = {k: fields.get('relative_velocity_' + k) for k in ['r', 't', 'n']}
             position = position if all(x is not None for x in position.values()) else None
             velocity = velocity if all(x is not None for x in velocity.values()) else None
             geometry = {'frame': 'RTN', 'position_m': position, 'velocity_mps': velocity} if position or velocity else None
-            used = eligible_by_id.get(event['event_id'], [])
-            if used and fields['time_to_tca'] < 2:
-                warnings.append('The forecast uses earlier reports at least 48h before TCA; displayed geometry/time comes from the latest source report.')
+            used = eligible_by_id.get(event['event_id'], []) if prediction['status']=='ready' else []
             assessment = {'event_id': event['event_id'], 'mission_id': fields.get('mission_id'),
                           'report_count': len(reports), 'latest_report_id': latest['report_id'],
                           'report_ids': [r['report_id'] for r in reports],

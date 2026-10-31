@@ -58,9 +58,9 @@ Vite-style development clients can use http://127.0.0.1:8000 as API base, or pro
 
 Error rows and `row-N` report IDs use the physical line where the CSV record ends. Blank lines count; quoted multiline records use their final line.
 
-Reports are grouped by preserved string event_id. Displayed latest report is minimum time_to_tca; ties choose the last CSV record with a visible warning. Source times stay days at the ML boundary and become hours in the API. The P3 input window contains only reports at least 2 days before TCA. Later records remain source evidence but never become forecast inputs. prediction_report_ids identifies the actual earlier window; report_ids/latest_report_id identify the source view.
+Reports are grouped by preserved string event_id. Displayed latest report is minimum time_to_tca; ties choose the last CSV record with a visible warning. Source times stay days at the ML boundary and become hours in the API. The backend bridge scores only that same latest report through P3's existing prediction.predict.predict_dataframe helper. No >=48h filter remains: the agreed model estimates per-report risk, not a final-TCA forecast. prediction_report_ids contains the actual scored latest report when ready; it is empty when prediction is unavailable. The twelve model feature columns must be present; numeric missing predictors follow P3's saved-model policy. Event IDs remain original strings in the response, but this trained model requires a finite numeric ID as an input feature. Target-derived risk/max-risk columns are excluded before scoring.
 
-The source-provided miss_distance is a prediction at TCA, not current measured distance. Reported Pc remains separate from model-predicted Pc. An unavailable model yields null predicted Pc, explicit warnings and `unknown` unless a known critical distance criterion independently triggers. A pass-through of reported risk is never presented as a trained forecast.
+The source-provided miss_distance is a prediction at TCA, not current measured distance. Reported Pc remains separate from model-predicted Pc. An unavailable model yields null predicted Pc, explicit warnings and `unknown` unless a known critical distance criterion independently triggers. A pass-through of reported risk is never presented as a learned prediction.
 
 Storage is in memory: 32 analyses, one-hour TTL, discarded on restart. Insight cache: 64 successful explanations for ten minutes, isolated by context version/analysis/event selection/model/credential identity. Missing credentials and failures are not cached. At most two provider calls are in flight, ten events per request, 2,048 output tokens and zero automatic retries.
 
@@ -107,3 +107,11 @@ python3 scripts/check.py
 ```
 
 Tests cover parser errors, ordering/provenance, model contract/unknown behavior, TTL/mutation isolation, local Anthropic HTTP success/failure/refusal/unsupported claims, multipart routes, local CORS and a complete HTTP upload-to-insights path. External provider tests use a local HTTP double and fake credentials, never a developer's key. Real test CSV upload is a separate measured smoke check; P3 model/evaluation and P1's finished dashboard remain independent work.
+
+## Integrated runtime
+
+Use `.venv/bin/python -m pip install -r backend/requirements-full.txt` for P3 inference plus PDF export in the same environment. `pnpm run dev:all` or `start.command` starts the API and P1's existing frontend together. A separate API can be started with `.venv/bin/python -m backend.server --port 8000`; `pnpm dev` remains frontend-only. The API on port 8000 serves the original bootstrap shell; the current dashboard is served by Vite on port 5173.
+
+`backend/model_adapter.py` is the P2 bridge. P3 predictor/training/rule source and weights are unchanged. Model and encoder SHA-256 prefixes identify the exact artifacts used; no training runs during uploads. The legacy public ml.predict_batch placeholder remains unchanged but is no longer the HTTP service default.
+
+Numeric key findings with unsupported quantities are replaced by cited source counts and an explicit warning. Other invalid references/identities or unsupported executive/assessment/action claims still make the narrative unavailable. Hour values may use the supplied two-decimal display; source values and classifications remain unchanged.

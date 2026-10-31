@@ -7,8 +7,11 @@
 - Selected challenge: **pending**. Airbus #2 is the exploration focus, not a commitment.
 - Selected product: **pending**. Recovery Desk is the coordinator's recommendation only.
 - Scope/build plan approval: **not requested or received yet**. No product code, app scaffold, dependencies, deployment, or teammate implementation tickets exist.
-- Actual submission deadline and team size/availability: asked in chat; pending. Do not infer them from the event date. The coordinator's eight-hour default is not the event deadline.
-- Teammate roles, preferred stack, model/provider access, hosting access, submission portal, and prebuilt-code restrictions: unknown.
+- Submission deadline: **31 October 2026, 16:15 Asia/Singapore (UTC+08:00)**. User confirmed 4:15 pm in reply to the Singapore-time intake question; same-day date follows the active hackathon context.
+- Team size: **4 builders**, confirmed by the user. Individual names, availability and roles remain unknown.
+- Preferred stack: **none**, confirmed by the user. Runtime and deployment choices remain proposals until selected for the product.
+- Model/provider access, hosting access, submission portal, and prebuilt-code restrictions: unknown.
+- Time check: at 10:40 Singapore time on 31 October, approximately **5 hours 35 minutes** remained. This is a recorded snapshot, not a live countdown. Reserve the final 30–45 minutes for verification, demo rehearsal and submission when sizing the selected build.
 
 ## Work completed
 
@@ -31,7 +34,7 @@ Superpowers source read: `/Users/ayush/.codex/plugins/cache/openai-curated-remot
 ## Next decisions
 
 1. Compare the [idea cards](ideas.md), select a user and core journey, or choose another challenge.
-2. Record deadline, team availability and existing access. Resolve data access independently; do not keep the team idle for it.
+2. Record individual team availability and existing access; deadline and team size are confirmed above. Resolve data access independently; do not keep the team idle for it.
 3. Write the selected design, obtain its approval, then use the installed planning workflow to produce the canonical scope/build plan with repo boundaries, contracts, named human owners, acceptance evidence and deadline checkpoints. Keep one plan and link any required design artifacts.
 4. After plan approval, adapt a reviewed baseline/Beryl installation, verify one real integration, and distribute independent tickets through the authorized repository. The `.beryl/agent/` preparation docs alone do not constitute that installation.
 

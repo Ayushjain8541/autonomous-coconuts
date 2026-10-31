@@ -84,9 +84,14 @@ export function pointerEncounterTime(value:number){const time=clampTime(value);r
 
 /** Source vectors are not epoch-tagged. Only the canonical synthetic fixture may
  * illustrate a short linear interval by explicitly assuming its state is at TCA. */
-export function encounterMotion(analysis:AnalysisResult,row:Encounter,canonicalId:string){
+export function encounterMotion(analysis:AnalysisResult,row:Encounter,canonical:AnalysisResult){
  const g=row.geometry,r=g?.position_m,v=g?.velocity_mps;
- if(analysis.source.mode!=='synthetic_demo'||analysis.analysis_id!==canonicalId||analysis.model.status!=='fixture'||row.prediction_status!=='fixture'||g?.frame!=='RTN'||!r||!v||row.miss_distance_m===null)return null;
+ if(analysis.source.mode!=='synthetic_demo'||analysis.model.status!=='fixture'||row.prediction_status!=='fixture'||g?.frame!=='RTN'||!r||!v||row.miss_distance_m===null)return null;
+ // Demo copies receive fresh analysis identities. Trust the fixture's content and
+ // provenance, never a mutable/literal analysis ID or an uploaded epoch-free state.
+ const expected=canonical.encounters.find(e=>e.event_id===row.event_id);
+ const same=(a:unknown,b:unknown):boolean=>{if(a===b)return true;if(Array.isArray(a)&&Array.isArray(b))return a.length===b.length&&a.every((value,i)=>same(value,b[i]));if(a&&b&&typeof a==='object'&&typeof b==='object'){const x=a as Record<string,unknown>,y=b as Record<string,unknown>;return Object.keys(x).length===Object.keys(y).length&&Object.keys(x).every(key=>Object.hasOwn(y,key)&&same(x[key],y[key]));}return false;};
+ if(!same(analysis.source,canonical.source)||!same(analysis.model,canonical.model)||analysis.time_basis!==canonical.time_basis||analysis.scenario_clock_utc!==canonical.scenario_clock_utc||!expected||!same(row,expected))return null;
  const position=[r.r,r.t,r.n] as [number,number,number],velocity=[v.r,v.t,v.n] as [number,number,number];
  if(![...position,...velocity,row.miss_distance_m].every(Number.isFinite)||row.miss_distance_m<0)return null;
  const gap=Math.hypot(...position),speed=Math.hypot(...velocity),dot=position.reduce((sum,n,i)=>sum+n*velocity[i],0);

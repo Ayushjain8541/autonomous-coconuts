@@ -96,20 +96,23 @@ test('pointer TCA capture gives a stable exact minimum without quantizing other 
 
 test('canonical fixture motion consumes actual response RTN vectors and has exact TCA distance',()=>{
  const row=analysis.encounters.find(r=>r.event_id==='demo-critical-36h')!;
- const model=encounterMotion(analysis,row,analysis.analysis_id)!;assert.ok(model);
+ const model=encounterMotion(analysis,row,analysis)!;assert.ok(model);
  assert.deepEqual(model.position,[800,0,0]);assert.deepEqual(model.velocity,[0,7500,0]);
  const tca=relativeMotionSample(model,.5);assert.equal(tca.separationM,800);assert.deepEqual(tca.debris,[4,0,0]);
  const before=relativeMotionSample(model,0),after=relativeMotionSample(model,1);assert.ok(before.debris[1]<0);assert.ok(after.debris[1]>0);assert.equal(before.separationM,after.separationM);
  const changed={...row,miss_distance_m:1600,geometry:{frame:'RTN' as const,position_m:{r:1600,t:0,n:0},velocity_mps:{r:0,t:0,n:3000}}};
- const other=encounterMotion(analysis,changed,analysis.analysis_id)!;assert.equal(relativeMotionSample(other,.5).separationM,1600);assert.ok(relativeMotionSample(other,1).debris[2]>0);assert.equal(relativeMotionSample(other,1).debris[1],0);
+ assert.equal(encounterMotion(analysis,changed,analysis),null);
 });
 test('unknown epochs, missing geometry and non-TCA states never acquire fabricated motion',()=>{
  const row=analysis.encounters[0];
- assert.equal(encounterMotion({...analysis,source:{...analysis.source,mode:'uploaded_csv'}},row,analysis.analysis_id),null);
- assert.equal(encounterMotion({...analysis,analysis_id:'other'},row,analysis.analysis_id),null);
- assert.equal(encounterMotion({...analysis,model:{...analysis.model,status:'ready'}},row,analysis.analysis_id),null);
- for(const other of analysis.encounters.filter(r=>r.geometry===null))assert.equal(encounterMotion(analysis,other,analysis.analysis_id),null);
- assert.equal(encounterMotion(analysis,{...row,miss_distance_m:900},analysis.analysis_id),null);
- assert.equal(encounterMotion(analysis,{...row,geometry:{frame:'RTN',position_m:{r:800,t:0,n:0},velocity_mps:{r:1,t:7500,n:0}}},analysis.analysis_id),null);
- assert.equal(encounterMotion(analysis,{...row,geometry:{frame:'RTN',position_m:{r:800,t:0,n:0},velocity_mps:{r:0,t:0,n:0}}},analysis.analysis_id),null);
+ assert.equal(encounterMotion({...analysis,source:{...analysis.source,mode:'uploaded_csv'}},row,analysis),null);
+ assert.ok(encounterMotion({...analysis,analysis_id:'fresh-api-demo'},row,analysis));
+ assert.equal(encounterMotion({...analysis,scenario_clock_utc:'2027-01-01T00:00:00Z'},row,analysis),null);
+ assert.equal(encounterMotion({...analysis,source:{...analysis.source,sha256:'changed'}},row,analysis),null);
+ assert.equal(encounterMotion({...analysis,source:{...analysis.source,label:'unconfirmed'}},row,analysis),null);
+ assert.equal(encounterMotion({...analysis,model:{...analysis.model,status:'ready'}},row,analysis),null);
+ for(const other of analysis.encounters.filter(r=>r.geometry===null))assert.equal(encounterMotion(analysis,other,analysis),null);
+ assert.equal(encounterMotion(analysis,{...row,miss_distance_m:900},analysis),null);
+ assert.equal(encounterMotion(analysis,{...row,geometry:{frame:'RTN',position_m:{r:800,t:0,n:0},velocity_mps:{r:1,t:7500,n:0}}},analysis),null);
+ assert.equal(encounterMotion(analysis,{...row,geometry:{frame:'RTN',position_m:{r:800,t:0,n:0},velocity_mps:{r:0,t:0,n:0}}},analysis),null);
 });

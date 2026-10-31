@@ -9,7 +9,7 @@ test('Critical → Elevated → Safe → Critical keeps reference satellite visi
  const analysis=parseAnalysis(fixture);
  for(const id of ['demo-critical-36h','demo-elevated-12h','demo-safe-20h','demo-critical-36h']){
   const row=analysis.encounters.find(row=>row.event_id===id)!;
-  const model=encounterMotion(analysis,row,analysis.analysis_id),visible=sceneVisibility(model!==null);
+  const model=encounterMotion(analysis,row,analysis),visible=sceneVisibility(model!==null);
   assert.equal(visible.primary,true);
   assert.equal(visible.debris,id==='demo-critical-36h');
   assert.equal(visible.vectors,id==='demo-critical-36h');

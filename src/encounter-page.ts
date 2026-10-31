@@ -1,6 +1,7 @@
+import {INSIGHT_TIMEOUT_MS,REPORT_TIMEOUT_MS} from '../web/client/report.ts';
 import type { AnalysisResult, Encounter } from '../web/client/contract.ts';
 import { ApiError, parseInsights } from '../web/client/contract.ts';
-import { loadInsights } from '../web/client/api.ts';
+import { generateReport, downloadReportPdf, loadInsights } from '../web/client/api.ts';
 import { maneuverReview, animatedMetric } from '../web/client/encounter-model.ts';
 import fixture from '../contracts/fixtures/insights-demo.json';
 import { mountPlayback } from './encounter-scene';
@@ -9,7 +10,7 @@ function text(tag:string,value:string,className='') {
   const e=document.createElement(tag);e.textContent=value;e.className=className;return e;
 }
 export function mountEncounterPage(host:HTMLElement,analysis:AnalysisResult,row:Encounter,localFixture:boolean,onBack:()=>void,outside:boolean) {
-  host.innerHTML=`<header class="encounter-page-header"><button class="back-dashboard">← Back to Dashboard</button><div><h1 tabindex="-1"></h1><p class="encounter-source"></p></div></header><div class="encounter-page-content"><section class="encounter-intelligence" aria-label="Encounter intelligence"><section class="assessment-card"><h2>Encounter intelligence</h2><div class="planning-alert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 9v5m0 3v1"/></svg><p class="planning-decision"></p></div><div class="risk-class"><span>Risk class</span><strong></strong></div><div class="key-metrics"></div><p class="outside-page-filter" hidden>Selected encounter is outside the current dashboard filter.</p></section><div class="report-download"><button disabled aria-describedby="report-download-status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg>Download Latest Source Report</button><small id="report-download-status">Coming soon</small></div><details class="insight-card"><summary>AI Insights <span class="insight-status">Not requested</span></summary><div class="insight-content" aria-live="polite"><p>Explain this encounter using the analysis facts.</p><button class="request-insights">Explain assessment</button></div></details></section><section class="encounter-visualization" aria-label="Interactive encounter schematic"></section></div>`;
+  host.innerHTML=`<header class="encounter-page-header"><button class="back-dashboard">← Back to Dashboard</button><div><h1 tabindex="-1"></h1><p class="encounter-source"></p></div></header><div class="encounter-page-content"><section class="encounter-intelligence" aria-label="Encounter intelligence"><section class="assessment-card"><h2>Encounter intelligence</h2><div class="planning-alert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 9v5m0 3v1"/></svg><p class="planning-decision"></p></div><div class="risk-class"><span>Risk class</span><strong></strong></div><div class="key-metrics"></div><p class="outside-page-filter" hidden>Selected encounter is outside the current dashboard filter.</p></section><div class="report-download"><button disabled aria-describedby="report-download-status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg>Download Latest Source Report</button><small id="report-download-status">Coming soon</small></div><div class="report-download analytical-report"><button class="generate-report">Download Analytical PDF</button><small class="analytical-report-status" role="status">Full analysis briefing · separate from the source report</small></div><details class="insight-card"><summary>AI Insights <span class="insight-status">Not requested</span></summary><div class="insight-content" aria-live="polite"><p>Explain this encounter using the analysis facts.</p><button class="request-insights">Explain assessment</button></div></details></section><section class="encounter-visualization" aria-label="Interactive encounter schematic"></section></div>`;
   const title=host.querySelector<HTMLElement>('h1')!;title.textContent=row.event_id;title.focus();
   host.querySelector('.back-dashboard')!.addEventListener('click',onBack);
   host.querySelector('.encounter-source')!.textContent=analysis.source.mode==='synthetic_demo'?'Demo data':analysis.model.status==='unavailable'?'Imported CSV · prediction unavailable':'Imported CSV';
@@ -32,7 +33,7 @@ export function mountEncounterPage(host:HTMLElement,analysis:AnalysisResult,row:
   const insight=host.querySelector('.insight-content')!,status=host.querySelector('.insight-status')!,explainButton=host.querySelector<HTMLButtonElement>('.request-insights')!;let controller=new AbortController();let active=true,timedOut=false,timeout=0,requested=false;
   function requestExplanation(){
    if(requested)return;if(document.activeElement===explainButton)host.querySelector<HTMLElement>('.insight-card>summary')!.focus();requested=true;timedOut=false;controller=new AbortController();status.textContent='Pending';explainButton.disabled=true;explainButton.textContent='Requesting explanation…';insight.replaceChildren(text('p','Requesting a grounded explanation…'),explainButton);
-   timeout=window.setTimeout(()=>{timedOut=true;controller.abort()},25000);
+   timeout=window.setTimeout(()=>{timedOut=true;controller.abort()},INSIGHT_TIMEOUT_MS);
    const operation=localFixture?Promise.resolve(parseInsights({...fixture,items:fixture.items.filter(i=>i.event_id===row.event_id)},analysis,[row.event_id])):loadInsights(analysis,[row.event_id],controller.signal);
    operation.then(result=>{
     clearTimeout(timeout);if(!active||controller.signal.aborted||result.analysis_id!==analysis.analysis_id)return;
@@ -42,5 +43,28 @@ export function mountEncounterPage(host:HTMLElement,analysis:AnalysisResult,row:
    }).catch(error=>{clearTimeout(timeout);if(!active||(controller.signal.aborted&&!timedOut))return;const unavailable=timedOut||(error instanceof ApiError&&error.code==='INSIGHTS_UNAVAILABLE');status.textContent=unavailable?'Unavailable':'Error';insight.replaceChildren(text('p',timedOut?'Explanation request timed out. Numeric analysis remains available.':(error as Error).message),text('p','Risk and numeric assessment remain available.'));requested=false;explainButton.disabled=false;explainButton.textContent='Retry explanation';insight.append(explainButton);});
   }
   explainButton.addEventListener('click',requestExplanation);
-  return {dispose(){active=false;cancelAnimationFrame(metricFrame);clearTimeout(timeout);controller.abort();playback.dispose();host.replaceChildren();}};
+  const reportButton=host.querySelector<HTMLButtonElement>('.generate-report')!,reportStatus=host.querySelector<HTMLElement>('.analytical-report-status')!;
+  let reportController:AbortController|null=null,reportTimeout=0,reportTimedOut=false,objectUrl:string|null=null;
+  reportButton.addEventListener('click',async()=>{
+   if(reportController)return;
+   if(localFixture){reportStatus.textContent='Unavailable for a local UI preview. Load the API demo or import an analysis first.';return;}
+   const requestController=new AbortController();reportController=requestController;reportTimedOut=false;reportButton.disabled=true;reportStatus.textContent='Generating full-analysis briefing and PDF…';
+   reportTimeout=window.setTimeout(()=>{reportTimedOut=true;requestController.abort()},REPORT_TIMEOUT_MS);
+   try{
+    const report=await generateReport(analysis,requestController.signal);
+    if(!active||requestController.signal.aborted||report.analysis_id!==analysis.analysis_id)return;
+    const narrative=report.status==='unavailable'?'Narrative unavailable; deterministic analysis PDF available.':'Analytical report ready.';
+    reportStatus.textContent=narrative+' Downloading PDF…';
+    clearTimeout(reportTimeout);
+    reportTimeout=window.setTimeout(()=>{reportTimedOut=true;requestController.abort()},REPORT_TIMEOUT_MS);
+    const blob=await downloadReportPdf(report,requestController.signal);
+    if(!active||requestController.signal.aborted)return;
+    if(objectUrl)URL.revokeObjectURL(objectUrl);objectUrl=URL.createObjectURL(blob);
+    const link=document.createElement('a');link.href=objectUrl;link.download=`analytical-report-${report.report_id}.pdf`;host.append(link);link.click();link.remove();
+    reportStatus.textContent=[narrative,'PDF download started.',...report.warnings].join(' ');
+   }catch(error){if(!active||(requestController.signal.aborted&&!reportTimedOut))return;reportStatus.textContent=reportTimedOut?'Analytical report timed out. Retry; numeric assessment remains available.':`${error instanceof ApiError?error.code+': ':''}${(error as Error).message} Numeric assessment remains available.`;}
+   finally{clearTimeout(reportTimeout);if(active){reportButton.disabled=false;reportButton.textContent='Download Analytical PDF';}reportController=null;}
+  });
+
+  return {dispose(){active=false;clearTimeout(reportTimeout);reportController?.abort();if(objectUrl)URL.revokeObjectURL(objectUrl);cancelAnimationFrame(metricFrame);clearTimeout(timeout);controller.abort();playback.dispose();host.replaceChildren();}};
 }

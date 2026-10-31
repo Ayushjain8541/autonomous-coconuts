@@ -51,3 +51,72 @@ Beryl readiness is lock-backed and reports root AGENTS.md as an intentionally pr
 Beryl standard is installed from pinned upstream source. The replaceable Python/browser fixture is runnable with no package install or API key. It proves connectivity and risk-rule behavior; trained prediction, CSV ingestion, live LLM and the finished console remain role-owned work. No final product framework is imposed.
 
 Original Airbus #2 brainstorming is [archived](.beryl/agent/hackathon/archive/airbus-2-ideas.md). The [coordinator skill](.agents/skills/hackathon-build/SKILL.md) is copied with its license in [third-party notices](THIRD_PARTY_NOTICES.md), subject to the user's workflow-freedom instruction in AGENTS.md. The team's product license remains undecided.
+
+## Model development and CSV prediction
+
+
+The model workflow below estimates the risk on each telemetry row. It remains
+separate from the bootstrap HTTP adapter and does not implement the shared
+final-report forecasting target described in the team contracts.
+
+The workspace has separate development and prediction workflows:
+
+```text
+development/
+  collision_risk_development.ipynb  # Experiments and evaluation
+  collision_risk.py                 # Model training
+  execute_notebook.py               # Notebook runner / JupyterLab launcher
+  train_data.csv
+  tests/
+  artifacts/                       # Experimental training outputs
+  .venv/                           # Notebook/training dependencies
+prediction/
+  predict.py                       # Saved-model inference
+  test_data.csv                    # Input (test.csv is also supported)
+  prediction_data.csv              # Output
+  artifacts/                       # Deployed model + encoding metadata
+  requirements.txt
+.venv/                             # Lightweight prediction environment
+```
+
+Generate predictions from the repository root:
+
+```bash
+.venv/bin/python prediction/predict.py
+```
+
+The default input, output, and model paths resolve inside `prediction/`, including
+when running from another directory. Explicit paths are relative to the current
+working directory:
+
+```bash
+.venv/bin/python prediction/predict.py --input prediction/test.csv --output prediction/prediction_data.csv
+```
+
+Run development tests or open the notebook:
+
+```bash
+development/.venv/bin/python -m pytest -q development/tests
+development/.venv/bin/python development/execute_notebook.py --lab
+```
+
+For a complete headless training and evaluation run:
+
+```bash
+development/.venv/bin/python development/execute_notebook.py
+```
+
+Training writes only to `development/artifacts/`. The deployed prediction model is
+updated by explicitly copying a reviewed model and its encoder into
+`prediction/artifacts/`; training never replaces it automatically.
+
+See [development/README.md](development/README.md) and
+[prediction/README.md](prediction/README.md) for setup and workflow details.
+
+### Local datasets
+
+Raw CSVs are excluded from Git and remain on the local machine. Before training,
+place the supplied training CSV at `development/train_data.csv`; before
+prediction, place the supplied test CSV at `prediction/test_data.csv` (or
+`prediction/test.csv`). See [ESA's dataset documentation](https://kelvins.esa.int/collision-avoidance-challenge/data/)
+for the original source, schema, and units. The model and encoder remain tracked.

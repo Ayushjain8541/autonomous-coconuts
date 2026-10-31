@@ -23,3 +23,18 @@ __pycache__/
 
 # Local Beryl update backups and analysis artifacts
 .beryl/.updates/
+
+# Local ML development outputs
+prediction_data.csv
+.pytest_cache/
+.ipynb_checkpoints/
+.jupyter/
+.cache/
+development/artifacts/
+
+# Supplied raw data and generated prediction CSVs stay local.
+/train_data.csv
+/test_data.csv
+/test.csv
+/development/*.csv
+/prediction/*.csv

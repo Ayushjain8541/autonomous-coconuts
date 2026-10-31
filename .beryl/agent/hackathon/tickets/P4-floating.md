@@ -1,4 +1,4 @@
-# P4 — Floating support and integration coordination
+# P4 — Floating support
 
 **Owner:** P4. **Suggested branches:** one `p4/<small-task>` per claim. **Scope:** eligible claims in open-tasks.md, root README/setup integration, docs/, tests/e2e/, optional CI/deployment config, evidence/demo, and handoffs/P4.md. **Requirements:** U-04 and integrated evidence across A1/U requirements. No implementation/integration is claimed.
 
@@ -12,9 +12,9 @@ Read actual branches/PRs/handoffs and the queue. Claim one ready, unclaimed task
 
 Stay out of P1/P2/P3-owned files unless the owner agrees a bounded assistance scope. Shared API changes, model targets/rules or deployment access are coordinated decisions, not opportunistic fixes. Return a blocked dependency to its owner with evidence; do not silently cut a required feature or substitute a fake success path.
 
-## Integration responsibility
+## Support for integration coordinated by Ayush
 
-Coordinate merging compatible role branches in dependency order with the owners, preserving concurrent changes. Consolidate actual setup commands and model artifact provisioning once they exist. Verify a real UI/API/model round trip and record insight status/failure handling. The authorized bootstrap now supplies a genuine Beryl installation, local development areas and runnable fixture shell. That is not completed trained inference, CSV ingestion, live LLM or the full product.
+Ayush (P2) owns coordination and merge decisions. Assist with compatibility checks, bounded integration tasks and evidence as assigned, preserving concurrent changes. Do not assume ownership of merges or coordination. Consolidate actual setup commands and model artifact provisioning once they exist. Verify a real UI/API/model round trip and record insight status/failure handling. The authorized bootstrap now supplies a genuine Beryl installation, local development areas and runnable fixture shell. That is not completed trained inference, CSV ingestion, live LLM or the full product.
 
 P4 does not automatically own every uncompleted task. Keep enough time for integration and submission readiness; prioritise dependency-unblocking work over optional polish. Do not publish/deploy, merge automatically, create provider accounts or message teammates without the appropriate human authorization.
 

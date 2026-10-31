@@ -23,4 +23,6 @@ fi
 if [ ! -d node_modules ]; then
   "$PACKAGE_RUNNER" install
 fi
-exec "$PACKAGE_RUNNER" run dev
+COCONUTS_PACKAGE_RUNNER="$PACKAGE_RUNNER"
+export COCONUTS_PACKAGE_RUNNER
+exec "$PACKAGE_RUNNER" run dev:all

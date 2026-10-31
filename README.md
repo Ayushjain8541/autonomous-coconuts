@@ -2,7 +2,7 @@
 
 Autonomous SG 2026 — **Airbus #1: Satellite Encounter Console** (working name).
 
-An operator loads encounter reports; a model forecasts collision probability, deterministic rules classify encounters, and an LLM explains the computed results. A linked list, timeline, globe/schematic and detail panel help inspect critical events.
+An operator loads encounter reports; a model estimates collision probability for the latest telemetry report, deterministic rules classify encounters, and an LLM explains the computed results. A linked list, timeline, globe/schematic and detail panel help inspect critical events.
 
 **Deadline:** 31 October 2026, 4:15 pm Singapore time. **Team:** P1 UI, P2 backend/LLM, P3 ML/algorithm, P4 floating support.
 
@@ -24,6 +24,23 @@ Ask your agent:
 > Read AGENTS.md, then .beryl/agent/hackathon/product-brief.md and my role brief in .beryl/agent/hackathon/tickets/. I am P1 / P2 / P3 / P4. Work within my scope, preserve teammate changes, and use the shared contracts for integration. Choose your own implementation workflow. Do not assume a fixture or a planned command is a real integration.
 
 Replace the role with yours. [Team entrypoint and role links](.beryl/agent/hackathon/README.md).
+
+## Run the integrated console locally
+
+Use Python 3.12+ (the model owner also validated Python 3.13), Node and pnpm. From the repo root:
+
+```sh
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -r backend/requirements-full.txt
+pnpm install --frozen-lockfile
+pnpm run dev:all
+```
+
+Open `http://127.0.0.1:5173`. `start.command` launches the same API-plus-UI stack. The launcher uses `.venv/bin/python`, starts the API on port 8000 and proxies the frontend's `/api` calls to it. Ctrl-C stops its own child servers. Existing occupied ports produce an actionable error; use `COCONUTS_PORT` and `COCONUTS_WEB_PORT` for a separate local instance. Keep an existing environment rather than recreating it if already configured.
+
+The root `.env.local` holds the existing Anthropic key. No key is needed for numeric inference. The backend calls P3's frozen predictor on each encounter's latest source report, including lead times shorter than two days. Missing required model columns, unsupported nonnumeric event IDs or a missing runtime remain explicitly unavailable; reported risk is never substituted.
+
+The UI remains P1's pushed implementation. Remaining frontend connections are listed in [the integration review](docs/integration-review.md), including report download and geometry citation handling. The HTTP/PDF endpoints work independently of those pending UI connections.
 
 ## Run and check the bootstrap
 

@@ -9,7 +9,8 @@
     "build": "pnpm typecheck && vite build --config web/vite.config.ts",
     "preview": "vite preview --config web/vite.config.ts",
     "postinstall": "node scripts/copy-cesium.mjs",
-    "test": "node --test tests/demo-data.test.ts web/tests/*.test.ts"
+    "test": "node --test tests/demo-data.test.ts web/tests/*.test.ts",
+    "dev:all": "python3 scripts/dev.py"
   },
   "dependencies": {
     "cesium": "^1.135.0",

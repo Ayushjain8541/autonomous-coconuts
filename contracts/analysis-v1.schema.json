@@ -1,0 +1,350 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "analysis-v1.schema.json",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "analysis_id": {
+      "type": "string"
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "enum": [
+            "synthetic_demo",
+            "uploaded_csv"
+          ]
+        },
+        "label": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "report_count": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "mode",
+        "label",
+        "sha256",
+        "report_count"
+      ],
+      "additionalProperties": false
+    },
+    "time_basis": {
+      "enum": [
+        "scenario_clock",
+        "per_event_latest_report"
+      ]
+    },
+    "scenario_clock_utc": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "model": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "enum": [
+            "ready",
+            "fixture",
+            "unavailable"
+          ]
+        },
+        "target": {
+          "type": "string"
+        },
+        "feature_schema_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "version",
+        "status",
+        "target",
+        "feature_schema_version"
+      ],
+      "additionalProperties": false
+    },
+    "encounters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "string"
+          },
+          "mission_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "report_count": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "latest_report_id": {
+            "type": "string"
+          },
+          "report_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "prediction_report_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "time_to_tca_hours": {
+            "type": "number",
+            "minimum": 0
+          },
+          "reported_pc": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1
+          },
+          "predicted_pc": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1
+          },
+          "predicted_log10_pc": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "maximum": 0
+          },
+          "prediction_status": {
+            "enum": [
+              "ready",
+              "fixture",
+              "unavailable"
+            ]
+          },
+          "miss_distance_m": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "relative_speed_mps": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "severity": {
+            "enum": [
+              "critical",
+              "elevated",
+              "safe",
+              "unknown"
+            ]
+          },
+          "flag_reasons": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "rule_id": {
+                  "enum": [
+                    "PC_CRITICAL",
+                    "MISS_DISTANCE_CRITICAL",
+                    "PC_ELEVATED",
+                    "MISS_DISTANCE_ELEVATED",
+                    "SAFE_COMBINED",
+                    "MISSING_EVIDENCE"
+                  ]
+                },
+                "field": {
+                  "type": "string"
+                },
+                "operator": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "threshold": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "unit": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "rule_id",
+                "field"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "geometry": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "frame": {
+                    "const": "RTN"
+                  },
+                  "position_m": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "r": {
+                            "type": "number"
+                          },
+                          "t": {
+                            "type": "number"
+                          },
+                          "n": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "r",
+                          "t",
+                          "n"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "velocity_mps": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "r": {
+                            "type": "number"
+                          },
+                          "t": {
+                            "type": "number"
+                          },
+                          "n": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "r",
+                          "t",
+                          "n"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "frame",
+                  "position_m",
+                  "velocity_mps"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "globe_position": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "event_id",
+          "mission_id",
+          "report_count",
+          "latest_report_id",
+          "report_ids",
+          "time_to_tca_hours",
+          "reported_pc",
+          "predicted_pc",
+          "predicted_log10_pc",
+          "prediction_status",
+          "miss_distance_m",
+          "relative_speed_mps",
+          "severity",
+          "flag_reasons",
+          "geometry",
+          "globe_position",
+          "warnings"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "analysis_id",
+    "source",
+    "time_basis",
+    "scenario_clock_utc",
+    "model",
+    "encounters",
+    "warnings"
+  ],
+  "additionalProperties": false
+}
